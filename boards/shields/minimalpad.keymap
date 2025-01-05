@@ -1,0 +1,24 @@
+/ {
+    keymap {
+        compatible = "zmk,keymap";
+
+        default_layer { // Layer 0 (Base Layer)
+            // Define key bindings for each key position
+            bindings = <
+                &kp Q    &kp W    &kp E    &kp R
+                &kp A    &kp S    &kp D    &kp F
+                &kp Z    &kp X    &kp C    &kp V
+                &kp 1    &kp 2    &kp 3    &kp 4
+            >;
+        };
+
+        layer_1 { // Layer 1 (Example FN Layer)
+            bindings = <
+                &kp ESC  &kp TAB  &kp BSPC &kp DEL
+                &kp LEFT &kp DOWN &kp UP   &kp RIGHT
+                &kp LSHFT &kp LCTRL &kp LALT &kp LGUI
+                &kp 5    &kp 6    &kp 7    &kp 8
+            >;
+        };
+    };
+};

@@ -1,0 +1,4 @@
+# Kconfig.shield for minimalpad
+
+config SHIELD_MINIMALPAD
+    def_bool $(shields_list_contains,minimalpad)
