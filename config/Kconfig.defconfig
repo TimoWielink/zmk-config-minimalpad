@@ -4,6 +4,6 @@ if SHIELD_MINIMALPAD
 
 # Name of the keyboard
 config ZMK_KEYBOARD_NAME
-    default "MinimalPad"
+    default "minimalpad"
 
 endif
