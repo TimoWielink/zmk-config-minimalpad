@@ -5,7 +5,7 @@
         default_layer { // Layer 0 (Base Layer)
             // Define key bindings for each key position
             bindings = <
-                &kp Q    &kp W    &kp E    &kp R
+                &kp Q    &kp W    &kp E    &mo 1
                 &kp A    &kp S    &kp D    &kp F
                 &kp Z    &kp X    &kp C    &kp V
                 &kp 1    &kp 2    &kp 3    &kp 4
