@@ -1,6 +1,24 @@
 name: Build ZMK firmware
+
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build:
-    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
+    runs-on: ubuntu-latest
+    container:
+      image: zmkfirmware/zmk-build-arm:stable
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Move Shield Files
+        run: |
+          mkdir -p config/boards/shields/minimalpad
+          cp -r boards/shields/minimalpad/* config/boards/shields/minimalpad/
+      - name: West Init
+        run: west init -l config
+      - name: West Update
+        run: west update
+      - name: West Zephyr export
+        run: west zephyr-export
+      - name: West Build
+        run: west build -s zmk/app -b nice_nano_v2 -- -DSHIELD=minimalpad -DZMK_CONFIG="${GITHUB_WORKSPACE}/config"
