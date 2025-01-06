@@ -9,7 +9,7 @@
 
         default_layer {
             bindings = <
-                &kp Q    &kp W    &kp E    &mo 1
+                 &rgb_ug RGB_TOG &rgb_ug RGB_EFF &kp BSPC &trans
                 &kp A    &kp S    &kp D    &kp F
                 &kp Z    &kp X    &kp C    &kp V
                 &kp N1   &kp N2   &kp N3   &kp N4
