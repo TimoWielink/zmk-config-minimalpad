@@ -2,53 +2,53 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
-    kscan0: kscan0 {
-        compatible = "zmk,kscan-gpio-matrix";
-        label = "KSCAN";
-        diode-direction = "col2row"; // Adjust if necessary based on diode direction
-        row-gpios = <
-            &pro_micro 20 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP) /* ROW0 */
-            &pro_micro 19 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP) /* ROW1 */
-            &pro_micro 18 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP) /* ROW2 */
-            &pro_micro 17 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP) /* ROW3 */
-        >;
-        col-gpios = <
-            &pro_micro 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)  /* COL0 */
-            &pro_micro 9 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)  /* COL1 */
-            &pro_micro 10 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP) /* COL2 */
-            &pro_micro 11 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP) /* COL3 */
-        >;
-    };
-
-    keymap_transform: keymap_transform {
-        compatible = "zmk,matrix-transform";
-        label = "Keymap Transform";
-        rows = <4>;
-        columns = <4>;
-        map = <
-            RC(0, 0) RC(0, 1) RC(0, 2) RC(0, 3) /* Row 0 */
-            RC(1, 0) RC(1, 1) RC(1, 2) RC(1, 3) /* Row 1 */
-            RC(2, 0) RC(2, 1) RC(2, 2) RC(2, 3) /* Row 2 */
-            RC(3, 0) RC(3, 1) RC(3, 2) RC(3, 3) /* Row 3 */
-        >;
-    };
-
-    leds {
-        compatible = "zmk,ws2812";
-        label = "Key LEDs";
-        chain-length = <16>;  /* Number of SK6812 LEDs */
-        io-pin = <&pro_micro 5 GPIO_ACTIVE_HIGH>; /* KEY_LEDS pin */
-    };
-
-    encoder0: encoder0 {
-        compatible = "zmk,rotary-encoder";
-        label = "Encoder0";
-        a-pin = <&pro_micro 7 GPIO_ACTIVE_HIGH>; /* ENCODER0_L1 */
-        b-pin = <&pro_micro 14 GPIO_ACTIVE_HIGH>; /* ENCODER0_L0 */
-    };
-
     chosen {
         zmk,kscan = &kscan0;
-        zmk,physical-layout = &keymap_transform;
+        zmk,matrix_transform = &default_transform;
+    };
+
+    default_transform: keymap_transform_0 {
+        compatible = "zmk,matrix-transform";
+        columns = <4>;
+        rows = <4>;
+        map = <
+            RC(0,0) RC(0,1) RC(0,2) RC(0,3)
+            RC(1,0) RC(1,1) RC(1,2) RC(1,3)
+            RC(2,0) RC(2,1) RC(2,2) RC(2,3)
+            RC(3,0) RC(3,1) RC(3,2) RC(3,3)
+        >;
+    };
+
+    kscan0: kscan {
+        compatible = "zmk,kscan-gpio-matrix";
+        label = "KSCAN";
+        diode-direction = "col2row";
+
+        col-gpios
+            = <&gpio0 8 GPIO_ACTIVE_HIGH>
+            , <&gpio0 9 GPIO_ACTIVE_HIGH>
+            , <&gpio0 10 GPIO_ACTIVE_HIGH>
+            , <&gpio0 11 GPIO_ACTIVE_HIGH>
+            ;
+
+        row-gpios
+            = <&gpio0 20 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
+            , <&gpio0 19 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
+            , <&gpio0 18 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
+            , <&gpio0 17 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
+            ;
+    };
+
+    encoder0: encoder_0 {
+        compatible = "alps,ec11";
+        label = "ENCODER_0";
+        a-gpios = <&gpio0 7 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+        b-gpios = <&gpio0 14 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+        resolution = <4>;
+    };
+
+    sensors {
+        compatible = "zmk,keymap-sensors";
+        sensors = <&encoder0>;
     };
 };
