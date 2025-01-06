@@ -18,7 +18,7 @@
 
         layer_1 {
             bindings = <
-                &rgb_ug_off &rgb_ug_on &kp BSPC &trans
+                &rgb_ug RGB_TOG &rgb_ug RGB_EFF &kp BSPC &trans
                 &kp LEFT &kp DOWN &kp UP   &kp RIGHT
                 &kp LSHFT &kp LCTRL &kp LALT &kp LGUI
                 &kp N5    &kp N6    &kp N7   &kp N8
