@@ -4,16 +4,23 @@
 #include <dt-bindings/zmk/rgb.h>
 
 / {
+    sensors {
+        compatible = "zmk,keymap-sensors";
+        sensors = <&encoder0>;
+        triggers-per-rotation = <20>;
+    };
+
     keymap {
         compatible = "zmk,keymap";
 
         default_layer {
             bindings = <
-                 &rgb_ug RGB_TOG &rgb_ug RGB_EFF &kp BSPC &trans
+                &rgb_ug RGB_TOG &rgb_ug RGB_EFF &kp BSPC &trans
                 &kp A    &kp S    &kp D    &kp F
                 &kp Z    &kp X    &kp C    &kp V
                 &kp N1   &kp N2   &kp N3   &kp N4
             >;
+            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
         };
 
         layer_1 {
@@ -23,6 +30,7 @@
                 &kp LSHFT &kp LCTRL &kp LALT &kp LGUI
                 &kp N5    &kp N6    &kp N7   &kp N8
             >;
+            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
         };
     };
 };
