@@ -7,7 +7,6 @@
     sensors {
         compatible = "zmk,keymap-sensors";
         sensors = <&encoder0>;
-        triggers-per-rotation = <12>;
     };
 
     keymap {
@@ -20,7 +19,7 @@
                           &kp Z    &kp X    &kp C    &kp V
                           &kp N1   &kp N2   &kp N3   &kp N4
             >;
-            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
+            sensor-bindings = <&inc_dec_kp PG_UP PG_DN>;
         };
 
         layer_1 {
@@ -30,7 +29,7 @@
                           &kp LSHFT &kp LCTRL &kp LALT &kp LGUI
                           &kp N5    &kp N6    &kp N7   &kp N8
             >;
-            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
+            sensor-bindings = <&inc_dec_kp PG_UP PG_DN>;
         };
     };
 };
