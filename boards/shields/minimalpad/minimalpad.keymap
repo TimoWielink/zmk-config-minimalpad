@@ -15,7 +15,7 @@
 
         default_layer {
             bindings = <
-                &kp C_MUTE &rgb_ug RGB_TOG &rgb_ug RGB_EFF &kp BSPC &trans
+                &kp C_MUTE &rgb_ug RGB_TOG &rgb_ug RGB_EFF &kp BSPC &kp C_MUTE
                           &kp A    &kp S    &kp D    &kp F
                           &kp Z    &kp X    &kp C    &kp V
                           &kp N1   &kp N2   &kp N3   &kp N4
@@ -25,7 +25,7 @@
 
         layer_1 {
             bindings = <
-                &kp C_MUTE &rgb_ug RGB_TOG &rgb_ug RGB_EFF &kp BSPC &trans
+                &kp C_MUTE &rgb_ug RGB_TOG &rgb_ug RGB_EFF &kp BSPC &kp C_MUTE
                           &kp LEFT &kp DOWN &kp UP   &kp RIGHT
                           &kp LSHFT &kp LCTRL &kp LALT &kp LGUI
                           &kp N5    &kp N6    &kp N7   &kp N8
