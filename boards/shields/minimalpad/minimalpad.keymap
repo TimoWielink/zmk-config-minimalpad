@@ -14,39 +14,39 @@
             compatible = "zmk,behavior-gpio";
             #binding-cells = <0>;
             gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-            bindings = <&out OUT_HIGH>;
+            bindings = <&out OUT_HIGH 0>;
         };
         layer0_led_off: layer0_led_off {
             compatible = "zmk,behavior-gpio";
             #binding-cells = <0>;
             gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-            bindings = <&out OUT_LOW>;
+            bindings = <&out OUT_LOW 0>;
         };
 
         layer1_led_on: layer1_led_on {
             compatible = "zmk,behavior-gpio";
             #binding-cells = <0>;
             gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
-            bindings = <&out OUT_HIGH>;
+            bindings = <&out OUT_HIGH 0>;
         };
         layer1_led_off: layer1_led_off {
             compatible = "zmk,behavior-gpio";
             #binding-cells = <0>;
             gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
-            bindings = <&out OUT_LOW>;
+            bindings = <&out OUT_LOW 0>;
         };
 
         layer2_led_on: layer2_led_on {
             compatible = "zmk,behavior-gpio";
             #binding-cells = <0>;
             gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
-            bindings = <&out OUT_HIGH>;
+            bindings = <&out OUT_HIGH 0>;
         };
         layer2_led_off: layer2_led_off {
             compatible = "zmk,behavior-gpio";
             #binding-cells = <0>;
             gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
-            bindings = <&out OUT_LOW>;
+            bindings = <&out OUT_LOW 0>;
         };
     };
 
