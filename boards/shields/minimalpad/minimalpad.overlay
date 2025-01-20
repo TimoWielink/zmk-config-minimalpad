@@ -1,96 +1,27 @@
 #include <dt-bindings/zmk/matrix_transform.h>
 #include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/led/led.h>
 
 / {
     chosen {
         zmk,kscan = &kscan0;
         zmk,matrix_transform = &default_transform;
-        zmk,underglow = &led_strip;
     };
 
-    behaviors {
-        layer0_led_on: layer0_led_on {
-            compatible = "zmk,behavior-output-to-gpio";
-            #binding-cells = <0>;
-            gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-            bit-size = <1>;
-            line-names = "layer0_led";
-            init-state = <0>;
-        };
-        layer0_led_off: layer0_led_off {
-            compatible = "zmk,behavior-output-to-gpio";
-            #binding-cells = <0>;
-            gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-            bit-size = <1>;
-            line-names = "layer0_led";
-            init-state = <0>;
-        };
-
-        layer1_led_on: layer1_led_on {
-            compatible = "zmk,behavior-output-to-gpio";
-            #binding-cells = <0>;
-            gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
-            bit-size = <1>;
-            line-names = "layer1_led";
-            init-state = <0>;
-        };
-        layer1_led_off: layer1_led_off {
-            compatible = "zmk,behavior-output-to-gpio";
-            #binding-cells = <0>;
-            gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
-            bit-size = <1>;
-            line-names = "layer1_led";
-            init-state = <0>;
-        };
-
-        layer2_led_on: layer2_led_on {
-            compatible = "zmk,behavior-output-to-gpio";
-            #binding-cells = <0>;
-            gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
-            bit-size = <1>;
-            line-names = "layer2_led";
-            init-state = <0>;
-        };
-        layer2_led_off: layer2_led_off {
-            compatible = "zmk,behavior-output-to-gpio";
-            #binding-cells = <0>;
-            gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
-            bit-size = <1>;
-            line-names = "layer2_led";
-            init-state = <0>;
-        };
-
-        to_layer0_with_led: to_layer0_with_led {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&to 0>, <&layer0_led_on>, <&layer1_led_off>, <&layer2_led_off>;
-        };
-
-        to_layer1_with_led: to_layer1_with_led {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&to 1>, <&layer0_led_off>, <&layer1_led_on>, <&layer2_led_off>;
-        };
-
-        to_layer2_with_led: to_layer2_with_led {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&to 2>, <&layer0_led_off>, <&layer1_led_off>, <&layer2_led_on>;
-        };
-    };
-
-    // Layer indicator LEDs
-    gpio_leds {
+    // Simple GPIO LEDs for layer indication
+    layer_leds {
         compatible = "gpio-leds";
-        indicator_led0: indicator_led_0 {
+        layer0_led: layer0_led {
             gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+            status = "okay";
+            init-on;
         };
-        indicator_led1: indicator_led_1 {
+        layer1_led: layer1_led {
             gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+            status = "okay";
         };
-        indicator_led2: indicator_led_2 {
+        layer2_led: layer2_led {
             gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+            status = "okay";
         };
     };
 
