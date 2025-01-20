@@ -10,64 +10,41 @@
 
 / {
     behaviors {
-        layer1_led_on: layer1_led_on {
-            compatible = "zmk,behavior-output";
+        layer0_led: layer0_led {
+            compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-            action = "on";
+            bindings = <&to DEFAULT>;
+            label = "LAYER_0_LED";
         };
         
-        layer1_led_off: layer1_led_off {
-            compatible = "zmk,behavior-output";
+        layer1_led: layer1_led {
+            compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-            action = "off";
+            bindings = <&to LOWER>;
+            label = "LAYER_1_LED";
         };
         
-        layer2_led_on: layer2_led_on {
-            compatible = "zmk,behavior-output";
+        layer2_led: layer2_led {
+            compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
-            action = "on";
+            bindings = <&to RAISE>;
+            label = "LAYER_2_LED";
         };
-        
-        layer2_led_off: layer2_led_off {
-            compatible = "zmk,behavior-output";
-            #binding-cells = <0>;
-            gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
-            action = "off";
-        };
-        
-        layer3_led_on: layer3_led_on {
-            compatible = "zmk,behavior-output";
-            #binding-cells = <0>;
-            gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
-            action = "on";
-        };
-        
-        layer3_led_off: layer3_led_off {
-            compatible = "zmk,behavior-output";
-            #binding-cells = <0>;
-            gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
-            action = "off";
-        };
+    };
 
-        to_l0: to_layer_0 {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&to DEFAULT>, <&layer1_led_on>, <&layer2_led_off>, <&layer3_led_off>;
+    conditional_layers {
+        compatible = "zmk,conditional-layers";
+        layer_indicators {
+            if-layers = <DEFAULT>;
+            then-layer = <&layer0_led>;
         };
-        
-        to_l1: to_layer_1 {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&to LOWER>, <&layer1_led_off>, <&layer2_led_on>, <&layer3_led_off>;
+        layer_indicators_1 {
+            if-layers = <LOWER>;
+            then-layer = <&layer1_led>;
         };
-        
-        to_l2: to_layer_2 {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&to RAISE>, <&layer1_led_off>, <&layer2_led_off>, <&layer3_led_on>;
+        layer_indicators_2 {
+            if-layers = <RAISE>;
+            then-layer = <&layer2_led>;
         };
     };
 
@@ -85,7 +62,7 @@
                 &kp N7    &kp N8    &kp N9
                 &kp N4    &kp N5    &kp N6
                 &kp N1    &kp N2    &kp N3
-                &to_l1    &kp N0    &to_l2
+                &to_layer1_with_led &kp N0 &to_layer2_with_led
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
         };
@@ -95,7 +72,7 @@
                 &kp HOME  &kp UP    &kp PG_UP
                 &kp LEFT  &kp ENTER &kp RIGHT
                 &kp END   &kp DOWN  &kp PG_DN
-                &to_l0    &kp DEL   &to_l2
+                &to_layer0_with_led &kp DEL &to_layer2_with_led
             >;
             sensor-bindings = <&inc_dec_kp PG_UP PG_DN>;
         };
@@ -105,7 +82,7 @@
                 &bt BT_SEL 0  &bt BT_SEL 1  &bt BT_SEL 2
                 &bt BT_SEL 3  &bt BT_SEL 4  &bt BT_CLR
                 &none         &none         &none
-                &to_l0        &none         &to_l1
+                &to_layer0_with_led &none &to_layer1_with_led
             >;
         };
     };
