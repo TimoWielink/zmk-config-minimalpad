@@ -9,6 +9,58 @@
         zmk,underglow = &led_strip;
     };
 
+    layer_leds {
+        compatible = "gpio-leds";
+        layer1_led: layer1_led {
+            gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+        };
+        layer2_led: layer2_led {
+            gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+        };
+        layer3_led: layer3_led {
+            gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+        };
+    };
+
+    behaviors {
+        layer1_led_on: layer1_led_on {
+            compatible = "zmk,behavior-output";
+            #binding-cells = <0>;
+            gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+            action = "on";
+        };
+        layer1_led_off: layer1_led_off {
+            compatible = "zmk,behavior-output";
+            #binding-cells = <0>;
+            gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+            action = "off";
+        };
+        layer2_led_on: layer2_led_on {
+            compatible = "zmk,behavior-output";
+            #binding-cells = <0>;
+            gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+            action = "on";
+        };
+        layer2_led_off: layer2_led_off {
+            compatible = "zmk,behavior-output";
+            #binding-cells = <0>;
+            gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+            action = "off";
+        };
+        layer3_led_on: layer3_led_on {
+            compatible = "zmk,behavior-output";
+            #binding-cells = <0>;
+            gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+            action = "on";
+        };
+        layer3_led_off: layer3_led_off {
+            compatible = "zmk,behavior-output";
+            #binding-cells = <0>;
+            gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+            action = "off";
+        };
+    };
+
     default_transform: keymap_transform_0 {
         compatible = "zmk,matrix-transform";
         columns = <5>;
