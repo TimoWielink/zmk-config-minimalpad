@@ -5,30 +5,27 @@
 #include <dt-bindings/zmk/outputs.h>
 
 #define DEFAULT 0
-#define LAYER_1 1
-#define LAYER_2 2
+#define LOWER   1
+#define RAISE   2
 
 / {
     behaviors {
-        layer_led_0: layer_led_0 {
+        to_l0: to_layer_0 {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            bindings = <&macro_tap &layer1_led_off &layer2_led_off &layer3_led_off>;
-            label = "LAYER_0_LEDS";
+            bindings = <&to DEFAULT>, <&layer1_led_on>, <&layer2_led_off>, <&layer3_led_off>;
         };
-
-        layer_led_1: layer_led_1 {
+        
+        to_l1: to_layer_1 {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            bindings = <&macro_tap &layer1_led_on &layer2_led_off &layer3_led_off>;
-            label = "LAYER_1_LEDS";
+            bindings = <&to LOWER>, <&layer1_led_off>, <&layer2_led_on>, <&layer3_led_off>;
         };
-
-        layer_led_2: layer_led_2 {
+        
+        to_l2: to_layer_2 {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            bindings = <&macro_tap &layer1_led_off &layer2_led_on &layer3_led_off>;
-            label = "LAYER_2_LEDS";
+            bindings = <&to RAISE>, <&layer1_led_off>, <&layer2_led_off>, <&layer3_led_on>;
         };
     };
 
@@ -48,11 +45,11 @@
             then-layer = <&layer_1_led>;
         };
         layer_indicators_1 {
-            if-layers = <LAYER_1>;
+            if-layers = <LOWER>;
             then-layer = <&layer_2_led>;
         };
         layer_indicators_2 {
-            if-layers = <LAYER_2>;
+            if-layers = <RAISE>;
             then-layer = <&layer_3_led>;
         };
     };
@@ -68,32 +65,31 @@
 
         default_layer {
             bindings = <
-                &kp C_MUTE &rgb_ug RGB_TOG &rgb_ug RGB_EFF &kp BSPC    &mo LAYER_1
-                          &kp A    &kp S    &kp D    &kp F
-                          &kp Z    &kp X    &kp C    &kp V
-                          &kp N1   &kp N2   &kp N3   &tog LAYER_1
+                &kp N7    &kp N8    &kp N9
+                &kp N4    &kp N5    &kp N6
+                &kp N1    &kp N2    &kp N3
+                &to_l1    &kp N0    &to_l2
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
         };
 
-        layer_1 {
+        lower_layer {
             bindings = <
-                &kp C_MUTE &rgb_ug RGB_TOG &rgb_ug RGB_EFF &kp BSPC    &mo LAYER_2
-                          &kp LEFT &kp DOWN &kp UP   &kp RIGHT
-                          &kp LSHFT &kp LCTRL &kp LALT &kp LGUI
-                          &kp N5    &kp N6    &kp N7   &tog LAYER_2
-            >;
-            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
-        };
-
-        layer_2 {
-            bindings = <
-                &kp C_MUTE &bt BT_CLR &out OUT_TOG &kp BSPC    &mo DEFAULT
-                          &bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &bt BT_SEL 3
-                          &kp LSHFT &kp LCTRL &kp LALT &kp LGUI
-                          &kp N9    &kp N0    &kp MINUS &tog DEFAULT
+                &kp HOME  &kp UP    &kp PG_UP
+                &kp LEFT  &kp ENTER &kp RIGHT
+                &kp END   &kp DOWN  &kp PG_DN
+                &to_l0    &kp DEL   &to_l2
             >;
             sensor-bindings = <&inc_dec_kp PG_UP PG_DN>;
+        };
+
+        raise_layer {
+            bindings = <
+                &bt BT_SEL 0  &bt BT_SEL 1  &bt BT_SEL 2
+                &bt BT_SEL 3  &bt BT_SEL 4  &bt BT_CLR
+                &none         &none         &none
+                &to_l0        &none         &to_l1
+            >;
         };
     };
 };
