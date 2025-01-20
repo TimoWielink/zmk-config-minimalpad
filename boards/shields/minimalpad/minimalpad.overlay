@@ -15,7 +15,6 @@
         layer0_led: layer0_led {
             gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
             status = "okay";
-            init-on;
         };
         layer1_led: layer1_led {
             gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
