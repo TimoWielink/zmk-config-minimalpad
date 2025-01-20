@@ -71,13 +71,13 @@
     // Layer indicator LEDs
     gpio_leds {
         compatible = "gpio-leds";
-        layer0_led: layer0_led {
+        indicator_led0: indicator_led_0 {
             gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
         };
-        layer1_led: layer1_led {
+        indicator_led1: indicator_led_1 {
             gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
         };
-        layer2_led: layer2_led {
+        indicator_led2: indicator_led_2 {
             gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
         };
     };
