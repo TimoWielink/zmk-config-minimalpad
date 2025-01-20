@@ -10,6 +10,48 @@
 
 / {
     behaviors {
+        layer1_led_on: layer1_led_on {
+            compatible = "zmk,behavior-output";
+            #binding-cells = <0>;
+            gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+            action = "on";
+        };
+        
+        layer1_led_off: layer1_led_off {
+            compatible = "zmk,behavior-output";
+            #binding-cells = <0>;
+            gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+            action = "off";
+        };
+        
+        layer2_led_on: layer2_led_on {
+            compatible = "zmk,behavior-output";
+            #binding-cells = <0>;
+            gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+            action = "on";
+        };
+        
+        layer2_led_off: layer2_led_off {
+            compatible = "zmk,behavior-output";
+            #binding-cells = <0>;
+            gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+            action = "off";
+        };
+        
+        layer3_led_on: layer3_led_on {
+            compatible = "zmk,behavior-output";
+            #binding-cells = <0>;
+            gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+            action = "on";
+        };
+        
+        layer3_led_off: layer3_led_off {
+            compatible = "zmk,behavior-output";
+            #binding-cells = <0>;
+            gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+            action = "off";
+        };
+
         to_l0: to_layer_0 {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
@@ -26,31 +68,6 @@
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
             bindings = <&to RAISE>, <&layer1_led_off>, <&layer2_led_off>, <&layer3_led_on>;
-        };
-    };
-
-    macros {
-        led_off: led_off {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&macro_tap &layer1_led_off &layer2_led_off &layer3_led_off>;
-            label = "LED_OFF";
-        };
-    };
-
-    conditional_layers {
-        compatible = "zmk,conditional-layers";
-        layer_indicators {
-            if-layers = <DEFAULT>;
-            then-layer = <&layer_1_led>;
-        };
-        layer_indicators_1 {
-            if-layers = <LOWER>;
-            then-layer = <&layer_2_led>;
-        };
-        layer_indicators_2 {
-            if-layers = <RAISE>;
-            then-layer = <&layer_3_led>;
         };
     };
 
