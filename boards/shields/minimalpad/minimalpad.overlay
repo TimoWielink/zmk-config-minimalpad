@@ -11,42 +11,54 @@
 
     behaviors {
         layer0_led_on: layer0_led_on {
-            compatible = "zmk,behavior-output";
+            compatible = "zmk,behavior-output-to-gpio";
             #binding-cells = <0>;
             gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-            action = "on";
+            bit-size = <1>;
+            line-names = "layer0_led";
+            init-state = <0>;
         };
         layer0_led_off: layer0_led_off {
-            compatible = "zmk,behavior-output";
+            compatible = "zmk,behavior-output-to-gpio";
             #binding-cells = <0>;
             gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-            action = "off";
+            bit-size = <1>;
+            line-names = "layer0_led";
+            init-state = <0>;
         };
 
         layer1_led_on: layer1_led_on {
-            compatible = "zmk,behavior-output";
+            compatible = "zmk,behavior-output-to-gpio";
             #binding-cells = <0>;
             gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
-            action = "on";
+            bit-size = <1>;
+            line-names = "layer1_led";
+            init-state = <0>;
         };
         layer1_led_off: layer1_led_off {
-            compatible = "zmk,behavior-output";
+            compatible = "zmk,behavior-output-to-gpio";
             #binding-cells = <0>;
             gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
-            action = "off";
+            bit-size = <1>;
+            line-names = "layer1_led";
+            init-state = <0>;
         };
 
         layer2_led_on: layer2_led_on {
-            compatible = "zmk,behavior-output";
+            compatible = "zmk,behavior-output-to-gpio";
             #binding-cells = <0>;
             gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
-            action = "on";
+            bit-size = <1>;
+            line-names = "layer2_led";
+            init-state = <0>;
         };
         layer2_led_off: layer2_led_off {
-            compatible = "zmk,behavior-output";
+            compatible = "zmk,behavior-output-to-gpio";
             #binding-cells = <0>;
             gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
-            action = "off";
+            bit-size = <1>;
+            line-names = "layer2_led";
+            init-state = <0>;
         };
 
         to_layer0_with_led: to_layer0_with_led {
