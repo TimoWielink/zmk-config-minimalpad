@@ -53,7 +53,7 @@
         test_led: test_led {
             compatible = "zmk,behavior-gpio";
             #binding-cells = <0>;
-            gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+            gpios = <&gpio1 13 0x0>;
             bindings = <&kp A>;
         };
     };
