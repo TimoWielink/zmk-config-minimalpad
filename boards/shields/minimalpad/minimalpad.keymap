@@ -13,39 +13,39 @@
         layer0_led_on: layer0_led_on {
             compatible = "zmk,behavior-output";
             #binding-cells = <0>;
-            gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+            gpios = <&layer0_led>;
             output-high;
         };
         layer0_led_off: layer0_led_off {
             compatible = "zmk,behavior-output";
             #binding-cells = <0>;
-            gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+            gpios = <&layer0_led>;
             output-low;
         };
 
         layer1_led_on: layer1_led_on {
             compatible = "zmk,behavior-output";
             #binding-cells = <0>;
-            gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+            gpios = <&layer1_led>;
             output-high;
         };
         layer1_led_off: layer1_led_off {
             compatible = "zmk,behavior-output";
             #binding-cells = <0>;
-            gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+            gpios = <&layer1_led>;
             output-low;
         };
 
         layer2_led_on: layer2_led_on {
             compatible = "zmk,behavior-output";
             #binding-cells = <0>;
-            gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+            gpios = <&layer2_led>;
             output-high;
         };
         layer2_led_off: layer2_led_off {
             compatible = "zmk,behavior-output";
             #binding-cells = <0>;
-            gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+            gpios = <&layer2_led>;
             output-low;
         };
     };
