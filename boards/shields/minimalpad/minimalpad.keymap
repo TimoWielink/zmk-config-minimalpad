@@ -87,19 +87,20 @@
 
         default_layer {
             bindings = <
-                &test_led &none &none
-                &none &none &none
-                &none &none &none
-                &none &none &none
+                &kp N7    &kp N8 &kp N9
+                &kp N4    &kp N5 &kp N6
+                &kp N1    &kp N2 &kp N3
+                &to LOWER &kp N0 &to RAISE
             >;
+            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
         };
 
         lower_layer {
             bindings = <
-                &kp HOME  &kp UP    &kp PG_UP
-                &kp LEFT  &kp ENTER &kp RIGHT
-                &kp END   &kp DOWN  &kp PG_DN
-                &to_layer0 &kp DEL  &to_layer2
+                &kp HOME    &kp UP    &kp PG_UP
+                &kp LEFT    &kp ENTER &kp RIGHT
+                &kp END     &kp DOWN  &kp PG_DN
+                &to DEFAULT &kp DEL   &to RAISE
             >;
             sensor-bindings = <&inc_dec_kp PG_UP PG_DN>;
         };
@@ -109,7 +110,7 @@
                 &bt BT_SEL 0  &bt BT_SEL 1  &bt BT_SEL 2
                 &bt BT_SEL 3  &bt BT_SEL 4  &bt BT_CLR
                 &none         &none         &none
-                &to_layer0    &none         &to_layer1
+                &to DEFAULT   &none         &to LOWER
             >;
         };
     };

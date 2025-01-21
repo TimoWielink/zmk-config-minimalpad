@@ -2,9 +2,12 @@ manifest:
   remotes:
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware
+    - name: timowielink
+      url-base: https://github.com/TimoWielink
+
   projects:
     - name: zmk
-      remote: zmkfirmware
+      remote: timowielink
       revision: main
       import: app/west.yml
   self:

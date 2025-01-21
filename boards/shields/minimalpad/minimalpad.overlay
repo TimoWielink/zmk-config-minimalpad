@@ -9,13 +9,14 @@
         zmk,underglow = &led_strip;
     };
 
-    // Simple GPIO LEDs for layer indication
+    aliases {
+        layer0-led = &layer0_led;
+        layer1-led = &layer1_led;
+        layer2-led = &layer2_led;
+    };
+
     layer_leds {
         compatible = "gpio-leds";
-        test_led: test_led {
-            gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-            status = "okay";
-        };
         layer0_led: layer0_led {
             gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
             status = "okay";
@@ -26,6 +27,14 @@
         };
         layer2_led: layer2_led {
             gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+            status = "okay";
+        };
+    };
+
+    behaviors {
+        led_layer: led_layer {
+            compatible = "zmk,behavior-led-layer";
+            #binding-cells = <0>;
             status = "okay";
         };
     };
