@@ -12,6 +12,10 @@
     // Simple GPIO LEDs for layer indication
     layer_leds {
         compatible = "gpio-leds";
+        test_led: test_led {
+            gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+            status = "okay";
+        };
         layer0_led: layer0_led {
             gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
             status = "okay";

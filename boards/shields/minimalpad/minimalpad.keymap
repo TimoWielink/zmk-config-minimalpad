@@ -48,6 +48,13 @@
             gpios = <&layer2_led>;
             output-low;
         };
+
+        test_led_on: test_led_on {
+            compatible = "zmk,behavior-output";
+            #binding-cells = <0>;
+            gpios = <&test_led>;
+            output-high;
+        };
     };
 
     macros {
@@ -79,12 +86,8 @@
 
         default_layer {
             bindings = <
-                &kp N7    &kp N8    &kp N9
-                &kp N4    &kp N5    &kp N6
-                &kp N1    &kp N2    &kp N3
-                &to_layer1 &kp N0   &to_layer2
+                &test_led_on
             >;
-            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
         };
 
         lower_layer {
