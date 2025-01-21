@@ -3,6 +3,7 @@
 #include <dt-bindings/zmk/bt.h>
 #include <dt-bindings/zmk/rgb.h>
 #include <dt-bindings/zmk/outputs.h>
+#include <dt-bindings/gpio/gpio.h>
 
 #define DEFAULT 0
 #define LOWER   1
@@ -49,11 +50,11 @@
             bindings = <&out OUT_LOW>;
         };
 
-        test_led_on: test_led_on {
-            compatible = "zmk,behavior-output";
+        test_led: test_led {
+            compatible = "zmk,behavior-gpio";
             #binding-cells = <0>;
-            gpios = <&test_led>;
-            output-high;
+            gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+            bindings = <&kp A>;
         };
     };
 
@@ -86,7 +87,10 @@
 
         default_layer {
             bindings = <
-                &test_led_on
+                &test_led &none &none
+                &none &none &none
+                &none &none &none
+                &none &none &none
             >;
         };
 
