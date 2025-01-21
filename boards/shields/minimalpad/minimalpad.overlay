@@ -9,33 +9,19 @@
         zmk,underglow = &led_strip;
     };
 
-    aliases {
-        layer0-led = &layer0_led;
-        layer1-led = &layer1_led;
-        layer2-led = &layer2_led;
-    };
-
-    layer_leds {
+    leds {
         compatible = "gpio-leds";
-        layer0_led: layer0_led {
+        layer0_led: layer_0 {
             gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-            status = "okay";
+            label = "Layer 0 LED";
         };
-        layer1_led: layer1_led {
+        layer1_led: layer_1 {
             gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
-            status = "okay";
+            label = "Layer 1 LED";
         };
-        layer2_led: layer2_led {
+        layer2_led: layer_2 {
             gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
-            status = "okay";
-        };
-    };
-
-    behaviors {
-        led_layer: led_layer {
-            compatible = "zmk,behavior-led-layer";
-            #binding-cells = <0>;
-            status = "okay";
+            label = "Layer 2 LED";
         };
     };
 
@@ -107,3 +93,5 @@
         color-mapping = <LED_COLOR_ID_GREEN LED_COLOR_ID_RED LED_COLOR_ID_BLUE>;
     };
 };
+
+
