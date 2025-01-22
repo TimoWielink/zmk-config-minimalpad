@@ -91,13 +91,7 @@
             ;
     };
 
-    sensors {
-        compatible = "zmk,keymap-sensors";
-        sensors = <&encoder0>;
-        triggers-per-rotation = <20>;
-    };
-
-    encoder0: encoder_0 {
+    encoder: encoder {
         compatible = "alps,ec11";
         a-gpios = <&gpio1 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
         b-gpios = <&gpio1 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
