@@ -15,15 +15,15 @@
     gpios {
         compatible = "gpio-leds";
         layer0_led: layer0 {
-            gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+            gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;  // Left LED - first layer
             label = "Layer 0 LED";
         };
         layer1_led: layer1 {
-            gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+            gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;   // Middle LED - second layer
             label = "Layer 1 LED";
         };
         layer2_led: layer2 {
-            gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+            gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;  // Right LED - third layer
             label = "Layer 2 LED";
         };
     };
@@ -34,34 +34,34 @@
         default_layer_on {
             layer = <0>;  // DEFAULT layer
             event = "on-activation";
-            bindings = <&gpio_led 0 GPIO_ON>;  // layer0_led
+            bindings = <&gpio1 13 GPIO_ON>;  // Left LED
         };
         default_layer_off {
             layer = <0>;  // DEFAULT layer
             event = "on-deactivation";
-            bindings = <&gpio_led 0 GPIO_OFF>;
+            bindings = <&gpio1 13 GPIO_OFF>;
         };
         
         lower_layer_on {
             layer = <1>;  // LOWER layer
             event = "on-activation";
-            bindings = <&gpio_led 1 GPIO_ON>;  // layer1_led
+            bindings = <&gpio0 9 GPIO_ON>;  // Middle LED
         };
         lower_layer_off {
             layer = <1>;  // LOWER layer
             event = "on-deactivation";
-            bindings = <&gpio_led 1 GPIO_OFF>;
+            bindings = <&gpio0 9 GPIO_OFF>;
         };
         
         raise_layer_on {
             layer = <2>;  // RAISE layer
             event = "on-activation";
-            bindings = <&gpio_led 2 GPIO_ON>;  // layer2_led
+            bindings = <&gpio1 11 GPIO_ON>;  // Right LED
         };
         raise_layer_off {
             layer = <2>;  // RAISE layer
             event = "on-deactivation";
-            bindings = <&gpio_led 2 GPIO_OFF>;
+            bindings = <&gpio1 11 GPIO_OFF>;
         };
     };
 
