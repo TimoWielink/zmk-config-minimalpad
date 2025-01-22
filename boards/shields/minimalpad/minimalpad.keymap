@@ -36,7 +36,7 @@
                 &rgb_ug RGB_SAI    &rgb_ug RGB_SPI    &rgb_ug RGB_EFR    &rgb_ug RGB_HUD
                 &rgb_ug RGB_BRD    &rgb_ug RGB_SPD    &rgb_ug RGB_SAD    &rgb_ug RGB_EFF
                 &none              &none              &none              &tog LOWER
-                &tog RAISE
+                &tog LOWER
             >;
             sensor-bindings = <&inc_dec_kp PG_UP PG_DN>;
         };
@@ -47,7 +47,7 @@
                 &kp PRCNT     &kp CARET     &kp AMPS      &kp STAR      // % ^ & *
                 &kp LPAR      &kp RPAR      &kp LBRC      &kp RBRC      // ( ) { }
                 &kp LBKT      &kp RBKT      &kp PIPE      &tog LOWER
-                &tog RAISE
+                &tog DEFAULT
             >;
             sensor-bindings = <&inc_dec_kp PG_UP PG_DN>;
         };
