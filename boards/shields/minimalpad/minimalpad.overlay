@@ -36,7 +36,6 @@
 
     layer_callbacks {
         compatible = "elpekenin,layer-callback";
-        #binding-cells = <2>;
         
         default_layer_on {
             layer = <0>;  // DEFAULT layer
