@@ -9,6 +9,7 @@
     chosen {
         zmk,kscan = &kscan0;
         zmk,matrix_transform = &default_transform;
+        zmk,underglow = &led_strip;
     };
 
     gpios {
@@ -30,35 +31,35 @@
     layer_callbacks {
         compatible = "elpekenin,layer-callback";
         
-        layer0_on {
-            layer = <0>;
+        default_layer_on {
+            layer = <0>;  // DEFAULT layer
             event = "on-activation";
             bindings = <&gpio 0 GPIO_ON>;
         };
-        layer0_off {
-            layer = <0>;
+        default_layer_off {
+            layer = <0>;  // DEFAULT layer
             event = "on-deactivation";
             bindings = <&gpio 0 GPIO_OFF>;
         };
         
-        layer1_on {
-            layer = <1>;
+        lower_layer_on {
+            layer = <1>;  // LOWER layer
             event = "on-activation";
             bindings = <&gpio 1 GPIO_ON>;
         };
-        layer1_off {
-            layer = <1>;
+        lower_layer_off {
+            layer = <1>;  // LOWER layer
             event = "on-deactivation";
             bindings = <&gpio 1 GPIO_OFF>;
         };
         
-        layer2_on {
-            layer = <2>;
+        raise_layer_on {
+            layer = <2>;  // RAISE layer
             event = "on-activation";
             bindings = <&gpio 2 GPIO_ON>;
         };
-        layer2_off {
-            layer = <2>;
+        raise_layer_off {
+            layer = <2>;  // RAISE layer
             event = "on-deactivation";
             bindings = <&gpio 2 GPIO_OFF>;
         };
@@ -131,13 +132,14 @@
 
     led_strip: ws2812@0 {
         compatible = "worldsemi,ws2812-spi";
+        label = "SK6812mini";
 
         /* SPI */
         reg = <0>;
         spi-max-frequency = <4000000>;
 
         /* WS2812 */
-        chain-length = <12>; /* number of LEDs */
+        chain-length = <16>; /* number of LEDs */
         spi-one-frame = <0x70>;
         spi-zero-frame = <0x40>;
         color-mapping = <LED_COLOR_ID_GREEN LED_COLOR_ID_RED LED_COLOR_ID_BLUE>;
