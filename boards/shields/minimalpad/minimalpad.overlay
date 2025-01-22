@@ -29,6 +29,17 @@
     layer_callbacks {
         compatible = "elpekenin,layer-callback";
         
+        default_layer_on {
+            layer = <0>;  // DEFAULT layer
+            event = "on-activation";
+            bindings = <&gpio 0 GPIO_ON>;
+        };
+        default_layer_off {
+            layer = <0>;  // DEFAULT layer
+            event = "on-deactivation";
+            bindings = <&gpio 0 GPIO_OFF>;
+        };
+        
         lower_layer_on {
             layer = <1>;  // LOWER layer
             event = "on-activation";
