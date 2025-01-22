@@ -14,18 +14,15 @@
 
     gpios {
         compatible = "gpio-leds";
-        
-        layer0: layer0_led {
+        layer0_led: layer0 {
             gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
             label = "Layer 0 LED";
         };
-
-        layer1: layer1_led {
+        layer1_led: layer1 {
             gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
             label = "Layer 1 LED";
         };
-
-        layer2: layer2_led {
+        layer2_led: layer2 {
             gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
             label = "Layer 2 LED";
         };
@@ -37,34 +34,34 @@
         default_layer_on {
             layer = <0>;  // DEFAULT layer
             event = "on-activation";
-            bindings = <&gpio1 13 GPIO_ON>;
+            bindings = <&gpio 0 GPIO_ON>;
         };
         default_layer_off {
             layer = <0>;  // DEFAULT layer
             event = "on-deactivation";
-            bindings = <&gpio1 13 GPIO_OFF>;
+            bindings = <&gpio 0 GPIO_OFF>;
         };
         
         lower_layer_on {
             layer = <1>;  // LOWER layer
             event = "on-activation";
-            bindings = <&gpio0 9 GPIO_ON>;
+            bindings = <&gpio 1 GPIO_ON>;
         };
         lower_layer_off {
             layer = <1>;  // LOWER layer
             event = "on-deactivation";
-            bindings = <&gpio0 9 GPIO_OFF>;
+            bindings = <&gpio 1 GPIO_OFF>;
         };
         
         raise_layer_on {
             layer = <2>;  // RAISE layer
             event = "on-activation";
-            bindings = <&gpio1 11 GPIO_ON>;
+            bindings = <&gpio 2 GPIO_ON>;
         };
         raise_layer_off {
             layer = <2>;  // RAISE layer
             event = "on-deactivation";
-            bindings = <&gpio1 11 GPIO_OFF>;
+            bindings = <&gpio 2 GPIO_OFF>;
         };
     };
 
@@ -145,7 +142,7 @@
         spi-max-frequency = <4000000>;
 
         /* WS2812 */
-        chain-length = <16>; /* Updated to 16 LEDs */
+        chain-length = <12>; /* number of LEDs */
         spi-one-frame = <0x70>;
         spi-zero-frame = <0x40>;
         color-mapping = <LED_COLOR_ID_GREEN LED_COLOR_ID_RED LED_COLOR_ID_BLUE>;
