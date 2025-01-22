@@ -12,18 +12,24 @@
         zmk,underglow = &led_strip;
     };
 
-    gpios {
+    aliases {
+        layer0-led = &led_layer0;
+        layer1-led = &led_layer1;
+        layer2-led = &led_layer2;
+    };
+
+    leds {
         compatible = "gpio-leds";
-        layer0_led: layer0 {
-            gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+        led_layer0: led_0 {
+            gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
             label = "Layer 0 LED";
         };
-        layer1_led: layer1 {
-            gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+        led_layer1: led_1 {
+            gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
             label = "Layer 1 LED";
         };
-        layer2_led: layer2 {
-            gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+        led_layer2: led_2 {
+            gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
             label = "Layer 2 LED";
         };
     };

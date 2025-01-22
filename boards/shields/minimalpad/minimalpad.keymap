@@ -24,7 +24,7 @@
                 &kp N7    &kp N8    &kp N9    &kp BSPC
                 &kp N4    &kp N5    &kp N6    &kp PLUS
                 &kp N1    &kp N2    &kp N3    &kp MINUS
-                &to LOWER &kp N0    &kp DOT   &kp RET
+                &to LOWER &kp N0    &kp DOT   &tog LOWER
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
         };
@@ -34,7 +34,7 @@
                 &rgb_ug RGB_TOG    &rgb_ug RGB_EFF    &rgb_ug RGB_BRI    &rgb_ug RGB_HUI
                 &rgb_ug RGB_SAI    &rgb_ug RGB_SPI    &rgb_ug RGB_EFR    &rgb_ug RGB_HUD
                 &rgb_ug RGB_BRD    &rgb_ug RGB_SPD    &rgb_ug RGB_SAD    &rgb_ug RGB_EFF
-                &to DEFAULT        &to RAISE          &none              &none
+                &to DEFAULT        &none              &none              &tog RAISE
             >;
             sensor-bindings = <&inc_dec_kp PG_UP PG_DN>;
         };
@@ -44,7 +44,7 @@
                 &bt BT_SEL 0    &bt BT_SEL 1    &bt BT_SEL 2    &bt BT_SEL 3
                 &bt BT_SEL 4    &bt BT_CLR      &none           &none
                 &out OUT_TOG    &none           &none           &none
-                &to DEFAULT     &to LOWER       &none           &none
+                &to DEFAULT     &none           &none           &tog DEFAULT
             >;
             sensor-bindings = <&inc_dec_kp PG_UP PG_DN>;
         };
