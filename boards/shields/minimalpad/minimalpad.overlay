@@ -108,6 +108,7 @@
 
 &pinctrl {
     compatible = "nordic,nrf-pinctrl";
+    #sensor-binding-cells = <2>;
     status = "okay";
 
     spi3_default: spi3_default {
