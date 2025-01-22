@@ -105,4 +105,10 @@
     status = "okay";
 };
 
+&timer0 {
+    status = "okay";
+    compatible = "nordic,nrf-timer";
+    #sensor-binding-cells = <2>;
+};
+
 
