@@ -9,57 +9,53 @@
     chosen {
         zmk,kscan = &kscan0;
         zmk,matrix_transform = &default_transform;
-        zmk,underglow = &led_strip;
     };
 
     gpios {
         compatible = "gpio-leds";
         layer0_led: layer0 {
             gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
-            label = "Layer 0 LED";
         };
         layer1_led: layer1 {
             gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
-            label = "Layer 1 LED";
         };
         layer2_led: layer2 {
             gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
-            label = "Layer 2 LED";
         };
     };
 
     layer_callbacks {
         compatible = "elpekenin,layer-callback";
         
-        default_layer_on {
-            layer = <0>;  // DEFAULT layer
+        layer0_on {
+            layer = <0>;
             event = "on-activation";
             bindings = <&gpio 0 GPIO_ON>;
         };
-        default_layer_off {
-            layer = <0>;  // DEFAULT layer
+        layer0_off {
+            layer = <0>;
             event = "on-deactivation";
             bindings = <&gpio 0 GPIO_OFF>;
         };
         
-        lower_layer_on {
-            layer = <1>;  // LOWER layer
+        layer1_on {
+            layer = <1>;
             event = "on-activation";
             bindings = <&gpio 1 GPIO_ON>;
         };
-        lower_layer_off {
-            layer = <1>;  // LOWER layer
+        layer1_off {
+            layer = <1>;
             event = "on-deactivation";
             bindings = <&gpio 1 GPIO_OFF>;
         };
         
-        raise_layer_on {
-            layer = <2>;  // RAISE layer
+        layer2_on {
+            layer = <2>;
             event = "on-activation";
             bindings = <&gpio 2 GPIO_ON>;
         };
-        raise_layer_off {
-            layer = <2>;  // RAISE layer
+        layer2_off {
+            layer = <2>;
             event = "on-deactivation";
             bindings = <&gpio 2 GPIO_OFF>;
         };
@@ -79,7 +75,6 @@
 
     kscan0: kscan_0 {
         compatible = "zmk,kscan-gpio-matrix";
-        label = "KSCAN";
         diode-direction = "col2row";
 
         col-gpios
@@ -98,7 +93,6 @@
 
     encoder0: encoder_0 {
         compatible = "alps,ec11";
-        label = "ENCODER";
         a-gpios = <&gpio1 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
         b-gpios = <&gpio1 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
         resolution = <4>;
