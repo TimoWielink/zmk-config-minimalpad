@@ -36,7 +36,7 @@
                 &rgb_ug RGB_BRD    &rgb_ug RGB_SPD    &rgb_ug RGB_SAD    &rgb_ug RGB_EFF
                 &to DEFAULT        &to RAISE          &none              &none
             >;
-            sensor-bindings = <&inc_dec_kp RGB_BRI RGB_BRD>;
+            sensor-bindings = <&inc_dec_kp PG_UP PG_DN>;
         };
 
         raise_layer {
