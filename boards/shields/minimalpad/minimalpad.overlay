@@ -3,6 +3,8 @@
 #include <dt-bindings/led/led.h>
 #include "elpekenin/behaviors.dtsi"
 
+#define NC 0xFFFFFFFF  /* Use to signal that a pin is not connected */
+
 / {
     chosen {
         zmk,kscan = &kscan0;
@@ -111,13 +113,6 @@
             psels = <NRF_PSEL(SPIM_MOSI, 0, 17)>;
         };
     };
-
-    spi3_sleep: spi3_sleep {
-        group1 {
-            psels = <NRF_PSEL(SPIM_MOSI, 0, 17)>;
-            low-power-enable;
-        };
-    };
 };
 
 &spi3 {
@@ -125,11 +120,11 @@
     status = "okay";
 
     pinctrl-0 = <&spi3_default>;
-    pinctrl-1 = <&spi3_sleep>;
-    pinctrl-names = "default", "sleep";
+    pinctrl-names = "default";
 
     led_strip: ws2812@0 {
         compatible = "worldsemi,ws2812-spi";
+        label = "SK6812mini";
 
         /* SPI */
         reg = <0>;
