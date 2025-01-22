@@ -90,10 +90,10 @@
 
         col-gpios
             = <&gpio0 24 GPIO_ACTIVE_HIGH>  // Col 0 - D5 (Encoder button)
-            , <&gpio1 0 GPIO_ACTIVE_HIGH>   // Col 1 - D6
-            , <&gpio0 11 GPIO_ACTIVE_HIGH>  // Col 2 - D7
-            , <&gpio1 4 GPIO_ACTIVE_HIGH>   // Col 3 - D8
-            , <&gpio1 6 GPIO_ACTIVE_HIGH>   // Col 4 - D9
+            , <&gpio1 0 GPIO_ACTIVE_HIGH>   // Col 1 - D6 (P1.00)
+            , <&gpio0 11 GPIO_ACTIVE_HIGH>  // Col 2 - D7 (P0.11)
+            , <&gpio1 4 GPIO_ACTIVE_HIGH>   // Col 3 - D8 (P1.04)
+            , <&gpio1 6 GPIO_ACTIVE_HIGH>   // Col 4 - D9 (P1.06)
             ;
 
         row-gpios
