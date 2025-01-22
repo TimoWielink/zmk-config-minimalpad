@@ -20,8 +20,3 @@ on:
 jobs:
   build:
     uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
-    with:
-      config_path: config
-      config_repo: TimoWielink/zmk-config-minimalpad
-      extra_modules: elpekenin/zmk-userspace
-      archive_name: firmware
