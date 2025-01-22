@@ -109,4 +109,18 @@
     status = "okay";
 };
 
+&timer0 {
+    status = "okay";
+    compatible = "nordic,nrf-timer";
+    prescaler = <4>;
+    #sensor-binding-cells = <2>;
+};
+
+&timer1 {
+    status = "okay";
+    compatible = "nordic,nrf-timer";
+    prescaler = <4>;
+    #sensor-binding-cells = <2>;
+};
+
 
