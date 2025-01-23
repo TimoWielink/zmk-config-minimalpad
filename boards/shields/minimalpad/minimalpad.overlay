@@ -13,24 +13,24 @@
     };
 
     aliases {
-        layer0-led = &led_layer0;
-        layer1-led = &led_layer1;
-        layer2-led = &led_layer2;
+        default-led = &led_default;
+        lower-led = &led_lower;
+        raise-led = &led_raise;
     };
 
-    leds {
+    gpios {
         compatible = "gpio-leds";
-        led_layer0: led_0 {
-            gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;  // D15
-            label = "Layer 0 LED";
+        led_default: default {
+            gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;  // D15 - Default layer
+            label = "Default Layer LED";
         };
-        led_layer1: led_1 {
-            gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;   // D10
-            label = "Layer 1 LED";
+        led_lower: lower {
+            gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;   // D10 - Lower layer
+            label = "Lower Layer LED";
         };
-        led_layer2: led_2 {
-            gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;  // D14
-            label = "Layer 2 LED";
+        led_raise: raise {
+            gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;  // D14 - Raise layer
+            label = "Raise Layer LED";
         };
     };
 
@@ -40,34 +40,34 @@
         default_layer_on {
             layer = <0>;  // DEFAULT layer
             event = "on-activation";
-            bindings = <&gpio 0 GPIO_ON>;
+            bindings = <&gpio1 13 GPIO_ACTIVE_LOW>;  // D15 - turn on
         };
         default_layer_off {
             layer = <0>;  // DEFAULT layer
             event = "on-deactivation";
-            bindings = <&gpio 0 GPIO_OFF>;
+            bindings = <&gpio1 13 GPIO_ACTIVE_HIGH>;  // D15 - turn off
         };
         
         lower_layer_on {
             layer = <1>;  // LOWER layer
             event = "on-activation";
-            bindings = <&gpio 1 GPIO_ON>;
+            bindings = <&gpio0 9 GPIO_ACTIVE_LOW>;   // D10 - turn on
         };
         lower_layer_off {
             layer = <1>;  // LOWER layer
             event = "on-deactivation";
-            bindings = <&gpio 1 GPIO_OFF>;
+            bindings = <&gpio0 9 GPIO_ACTIVE_HIGH>;  // D10 - turn off
         };
         
         raise_layer_on {
             layer = <2>;  // RAISE layer
             event = "on-activation";
-            bindings = <&gpio 2 GPIO_ON>;
+            bindings = <&gpio1 11 GPIO_ACTIVE_LOW>;  // D14 - turn on
         };
         raise_layer_off {
             layer = <2>;  // RAISE layer
             event = "on-deactivation";
-            bindings = <&gpio 2 GPIO_OFF>;
+            bindings = <&gpio1 11 GPIO_ACTIVE_HIGH>;  // D14 - turn off
         };
     };
 
