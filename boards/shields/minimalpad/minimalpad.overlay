@@ -43,34 +43,34 @@
         default_layer_on {
             layer = <0>;  // DEFAULT layer
             event = "on-activation";
-            bindings = <&gpio 0 GPIO_ACTIVE_LOW>;  // Turn on left LED
+            bindings = <&gpio 0 GPIO_ACTIVE_HIGH>;  // Turn off other LEDs, turn on LED 0
         };
         default_layer_off {
             layer = <0>;  // DEFAULT layer
             event = "on-deactivation";
-            bindings = <&gpio 0 GPIO_ACTIVE_HIGH>;  // Turn off left LED
+            bindings = <&gpio 0 GPIO_ACTIVE_LOW>;  // Turn off LED 0
         };
         
         lower_layer_on {
             layer = <1>;  // LOWER layer
             event = "on-activation";
-            bindings = <&gpio 1 GPIO_ACTIVE_LOW>;  // Turn on middle LED
+            bindings = <&gpio 1 GPIO_ACTIVE_HIGH>;  // Turn off other LEDs, turn on LED 1
         };
         lower_layer_off {
             layer = <1>;  // LOWER layer
             event = "on-deactivation";
-            bindings = <&gpio 1 GPIO_ACTIVE_HIGH>;  // Turn off middle LED
+            bindings = <&gpio 1 GPIO_ACTIVE_LOW>;  // Turn off LED 1
         };
         
         raise_layer_on {
             layer = <2>;  // RAISE layer
             event = "on-activation";
-            bindings = <&gpio 2 GPIO_ACTIVE_LOW>;  // Turn on right LED
+            bindings = <&gpio 2 GPIO_ACTIVE_HIGH>;  // Turn off other LEDs, turn on LED 2
         };
         raise_layer_off {
             layer = <2>;  // RAISE layer
             event = "on-deactivation";
-            bindings = <&gpio 2 GPIO_ACTIVE_HIGH>;  // Turn off right LED
+            bindings = <&gpio 2 GPIO_ACTIVE_LOW>;  // Turn off LED 2
         };
     };
 
