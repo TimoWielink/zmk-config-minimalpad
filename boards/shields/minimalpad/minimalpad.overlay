@@ -21,17 +21,17 @@
     gpios {
         compatible = "gpio-leds";
         led_0: led_0 {
-            gpios = <&gpio1 13 (GPIO_ACTIVE_LOW | GPIO_ACTIVE_LOW)>;  // D15 - Default layer (left LED), start ON
+            gpios = <&gpio1 13 (GPIO_ACTIVE_HIGH)>;  // D15 - Default layer (left LED)
             label = "Layer 0 LED";
             status = "okay";
         };
         led_1: led_1 {
-            gpios = <&gpio0 9 (GPIO_ACTIVE_LOW | GPIO_ACTIVE_HIGH)>;   // D10 - Lower layer (middle LED), start OFF
+            gpios = <&gpio0 9 (GPIO_ACTIVE_HIGH)>;   // D10 - Lower layer (middle LED)
             label = "Layer 1 LED";
             status = "okay";
         };
         led_2: led_2 {
-            gpios = <&gpio1 11 (GPIO_ACTIVE_LOW | GPIO_ACTIVE_HIGH)>;  // D14 - Raise layer (right LED), start OFF
+            gpios = <&gpio1 11 (GPIO_ACTIVE_HIGH)>;  // D14 - Raise layer (right LED)
             label = "Layer 2 LED";
             status = "okay";
         };
@@ -43,34 +43,34 @@
         default_layer_on {
             layer = <0>;  // DEFAULT layer
             event = "on-activation";
-            bindings = <&gpio 0 GPIO_ACTIVE_LOW>;  // Turn on left LED (set LOW)
+            bindings = <&gpio 0 GPIO_ACTIVE_HIGH>;  // Turn on left LED (set HIGH)
         };
         default_layer_off {
             layer = <0>;  // DEFAULT layer
             event = "on-deactivation";
-            bindings = <&gpio 0 GPIO_ACTIVE_HIGH>;  // Turn off left LED (set HIGH)
+            bindings = <&gpio 0 GPIO_ACTIVE_LOW>;  // Turn off left LED (set LOW)
         };
         
         lower_layer_on {
             layer = <1>;  // LOWER layer
             event = "on-activation";
-            bindings = <&gpio 1 GPIO_ACTIVE_LOW>;  // Turn on middle LED (set LOW)
+            bindings = <&gpio 1 GPIO_ACTIVE_HIGH>;  // Turn on middle LED (set HIGH)
         };
         lower_layer_off {
             layer = <1>;  // LOWER layer
             event = "on-deactivation";
-            bindings = <&gpio 1 GPIO_ACTIVE_HIGH>;  // Turn off middle LED (set HIGH)
+            bindings = <&gpio 1 GPIO_ACTIVE_LOW>;  // Turn off middle LED (set LOW)
         };
         
         raise_layer_on {
             layer = <2>;  // RAISE layer
             event = "on-activation";
-            bindings = <&gpio 2 GPIO_ACTIVE_LOW>;  // Turn on right LED (set LOW)
+            bindings = <&gpio 2 GPIO_ACTIVE_HIGH>;  // Turn on right LED (set HIGH)
         };
         raise_layer_off {
             layer = <2>;  // RAISE layer
             event = "on-deactivation";
-            bindings = <&gpio 2 GPIO_ACTIVE_HIGH>;  // Turn off right LED (set HIGH)
+            bindings = <&gpio 2 GPIO_ACTIVE_LOW>;  // Turn off right LED (set LOW)
         };
     };
 
