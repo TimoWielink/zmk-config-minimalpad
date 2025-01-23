@@ -13,9 +13,9 @@
     };
 
     aliases {
-        default-led = &led_default;
-        lower-led = &led_lower;
-        raise-led = &led_raise;
+        default-led = &led_0;
+        lower-led = &led_1;
+        raise-led = &led_2;
     };
 
     gpios {
