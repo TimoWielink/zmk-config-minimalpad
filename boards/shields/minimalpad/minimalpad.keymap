@@ -46,7 +46,7 @@
                 &kp EXCL      &kp AT        &kp HASH      &kp DLLR      // ! @ # $
                 &kp PRCNT     &kp CARET     &kp AMPS      &kp STAR      // % ^ & *
                 &kp LPAR      &kp RPAR      &kp LBRC      &kp RBRC      // ( ) { }
-                &kp LBKT      &kp RBKT      &kp PIPE      &tog DEFAULT
+                &kp LBKT      &kp RBKT      &kp PIPE      &tog DEFAULT  // Go directly to DEFAULT
                 &kp C_MUTE
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
