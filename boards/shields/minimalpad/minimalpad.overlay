@@ -21,17 +21,17 @@
     gpios {
         compatible = "gpio-leds";
         led_0: led_0 {
-            gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;  // D15 - Default layer (left LED)
+            gpios = <&gpio1 13 (GPIO_ACTIVE_LOW | GPIO_ACTIVE_LOW)>;  // D15 - Default layer (left LED), start ON
             label = "Layer 0 LED";
             status = "okay";
         };
         led_1: led_1 {
-            gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;   // D10 - Lower layer (middle LED)
+            gpios = <&gpio0 9 (GPIO_ACTIVE_LOW | GPIO_ACTIVE_HIGH)>;   // D10 - Lower layer (middle LED), start OFF
             label = "Layer 1 LED";
             status = "okay";
         };
         led_2: led_2 {
-            gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;  // D14 - Raise layer (right LED)
+            gpios = <&gpio1 11 (GPIO_ACTIVE_LOW | GPIO_ACTIVE_HIGH)>;  // D14 - Raise layer (right LED), start OFF
             label = "Layer 2 LED";
             status = "okay";
         };
