@@ -20,23 +20,21 @@
 
     gpios {
         compatible = "gpio-leds";
+        #binding-cells = <2>;
+        
         left: left {
-            gpios = <&gpio1 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;  // D15 - Default layer
-            status = "okay";
+            gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;  // D15 - Default layer
         };
         middle: middle {
-            gpios = <&gpio0 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;   // D10 - Lower layer
-            status = "okay";
+            gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;   // D10 - Lower layer
         };
         right: right {
-            gpios = <&gpio1 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;  // D14 - Raise layer
-            status = "okay";
+            gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;  // D14 - Raise layer
         };
     };
 
     layer_callbacks {
         compatible = "elpekenin,layer-callback";
-        #binding-cells = <2>;
         
         default_layer_on {
             layer = <0>;  // DEFAULT layer
