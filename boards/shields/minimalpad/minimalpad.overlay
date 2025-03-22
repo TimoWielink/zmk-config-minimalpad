@@ -1,7 +1,6 @@
 #include <dt-bindings/zmk/matrix_transform.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/led/led.h>
-#include "elpekenin/behaviors.dtsi"
 
 #define NC 0xFFFFFFFF  /* Use to signal that a pin is not connected */
 
@@ -10,65 +9,6 @@
         zmk,kscan = &kscan0;
         zmk,matrix_transform = &default_transform;
         zmk,underglow = &led_strip;
-    };
-
-    aliases {
-        layer0-led = &led_layer0;
-        layer1-led = &led_layer1;
-        layer2-led = &led_layer2;
-    };
-
-    leds {
-        compatible = "gpio-leds";
-        led_layer0: led_0 {
-            gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;  // D15
-            label = "Layer 0 LED";
-        };
-        led_layer1: led_1 {
-            gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;   // D10
-            label = "Layer 1 LED";
-        };
-        led_layer2: led_2 {
-            gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;  // D14
-            label = "Layer 2 LED";
-        };
-    };
-
-    layer_callbacks {
-        compatible = "elpekenin,layer-callback";
-        
-        default_layer_on {
-            layer = <0>;  // DEFAULT layer
-            event = "on-activation";
-            bindings = <&gpio 0 GPIO_ON>;
-        };
-        default_layer_off {
-            layer = <0>;  // DEFAULT layer
-            event = "on-deactivation";
-            bindings = <&gpio 0 GPIO_OFF>;
-        };
-        
-        lower_layer_on {
-            layer = <1>;  // LOWER layer
-            event = "on-activation";
-            bindings = <&gpio 1 GPIO_ON>;
-        };
-        lower_layer_off {
-            layer = <1>;  // LOWER layer
-            event = "on-deactivation";
-            bindings = <&gpio 1 GPIO_OFF>;
-        };
-        
-        raise_layer_on {
-            layer = <2>;  // RAISE layer
-            event = "on-activation";
-            bindings = <&gpio 2 GPIO_ON>;
-        };
-        raise_layer_off {
-            layer = <2>;  // RAISE layer
-            event = "on-deactivation";
-            bindings = <&gpio 2 GPIO_OFF>;
-        };
     };
 
     default_transform: keymap_transform_0 {
