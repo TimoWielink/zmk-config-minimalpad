@@ -22,7 +22,7 @@
         default_layer {
             bindings = <
                 &rgb_ug RGB_TOG    &rgb_ug RGB_EFF    &rgb_ug RGB_BRI    &rgb_ug RGB_HUI
-                &bt_sel 0 &bt_sel 1 &bt_sel 2 &bt_sel 3
+                &bt BT_SEL 0       &bt BT_SEL 1       &bt BT_SEL 2       &bt BT_SEL 3
                 &kp N1    &kp N2    &kp N3    &kp MINUS
                 &kp N0    &kp DOT   &kp ENTER &tog LOWER
                 &kp C_MUTE
