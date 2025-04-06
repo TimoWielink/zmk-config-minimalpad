@@ -10,15 +10,4 @@ config ZMK_KEYBOARD_NAME
 config ZMK_BLE
     default y
 
-# Avoid UART dependency for Bluetooth that causes warning
-config BT_CTLR_TX_BUFFER_SIZE
-    default 258
-    depends on BT_LL_SW_SPLIT
-
-config BT_BUF_ACL_TX_SIZE 
-    default 251
-
-config BT_BUF_ACL_RX_SIZE
-    default 251
-
 endif
