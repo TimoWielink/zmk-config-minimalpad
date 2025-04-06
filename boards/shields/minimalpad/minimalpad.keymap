@@ -1,6 +1,8 @@
 #include <behaviors.dtsi>
 #include <dt-bindings/zmk/keys.h>
+#include <dt-bindings/zmk/bt.h>
 #include <dt-bindings/zmk/rgb.h>
+#include <dt-bindings/zmk/outputs.h>
 #include <dt-bindings/gpio/gpio.h>
 
 #define DEFAULT 0
@@ -19,8 +21,8 @@
 
         default_layer {
             bindings = <
-                &rgb_ug RGB_TOG    &kp F13           &kp F14           &rgb_ug RGB_HUI
-                &kp F15            &kp F16           &kp F17           &kp F18
+                &rgb_ug RGB_TOG    &out OUT_TOG       &bt BT_CLR         &rgb_ug RGB_HUI
+                &bt BT_SEL 0       &bt BT_SEL 1       &bt BT_SEL 2       &bt BT_SEL 3
                 &kp N1    &kp N2    &kp N3    &kp MINUS
                 &kp N0    &kp DOT   &kp ENTER &tog LOWER
                 &kp C_MUTE
@@ -41,9 +43,9 @@
 
         raise_layer {
             bindings = <
-                &kp F19           &kp F20           &kp F21           &kp F22      
-                &kp PRCNT     &kp CARET     &kp AMPS      &kp STAR     
-                &kp LPAR      &kp RPAR      &kp LBRC      &kp RBRC     
+                &bt BT_CLR         &out OUT_TOG       &bt BT_PRV         &bt BT_NXT     // Clear BT, Toggle Output, Prev BT, Next BT
+                &kp PRCNT     &kp CARET     &kp AMPS      &kp STAR      // % ^ & *
+                &kp LPAR      &kp RPAR      &kp LBRC      &kp RBRC      // ( ) { }
                 &kp LBKT      &kp RBKT      &kp PIPE      &tog DEFAULT
                 &kp C_MUTE
             >;
