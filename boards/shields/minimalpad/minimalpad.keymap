@@ -7,8 +7,6 @@
 
 #define DEFAULT 0
 #define LOWER   1
-#define RAISE   2
-#define BT_TEST 3
 
 / {
     sensors {
@@ -22,11 +20,11 @@
 
         default_layer {
             bindings = <
-                &rgb_ug RGB_TOG    &out OUT_TOG       &out OUT_BLE       &out OUT_USB     // Toggle RGB, Toggle output, Force BLE, Force USB
-                &bt BT_SEL 0       &bt BT_SEL 1       &bt BT_SEL 2       &bt BT_SEL 3     // BT profiles 0-3
-                &bt BT_CLR         &bt BT_NXT         &bt BT_PRV         &bt BT_CLR_ALL   // Clear profile, Next, Previous, Clear all
-                &kp N0             &kp DOT            &kp ENTER          &tog LOWER       // Numbers and toggle to lower layer
-                &kp C_MUTE                                                                // Encoder button
+                &kp N7        &kp N8        &kp N9        &kp BSPC
+                &kp N4        &kp N5        &kp N6        &kp PLUS
+                &kp N1        &kp N2        &kp N3        &kp MINUS
+                &kp N0        &kp DOT       &kp ENTER     &mo LOWER
+                &kp C_MUTE                                           // Encoder button
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
         };
@@ -34,32 +32,10 @@
         lower_layer {
             bindings = <
                 &rgb_ug RGB_TOG    &rgb_ug RGB_EFF    &rgb_ug RGB_BRI    &rgb_ug RGB_HUI
-                &rgb_ug RGB_SAI    &rgb_ug RGB_SPI    &rgb_ug RGB_EFR    &rgb_ug RGB_HUD
-                &rgb_ug RGB_BRD    &rgb_ug RGB_SPD    &rgb_ug RGB_SAD    &rgb_ug RGB_EFF
-                &none              &none              &none              &tog RAISE
+                &bt BT_SEL 0       &bt BT_SEL 1       &bt BT_SEL 2       &bt BT_SEL 3
+                &bt BT_CLR         &out OUT_TOG       &out OUT_BLE       &out OUT_USB
+                &bootloader        &sys_reset         &none              &trans
                 &kp C_MUTE
-            >;
-            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
-        };
-
-        raise_layer {
-            bindings = <
-                &bt BT_CLR         &out OUT_TOG       &bt BT_PRV         &bt BT_NXT     // Clear BT, Toggle Output, Prev BT, Next BT
-                &kp PRCNT     &kp CARET     &kp AMPS      &kp STAR      // % ^ & *
-                &kp LPAR      &kp RPAR      &kp LBRC      &kp RBRC      // ( ) { }
-                &kp LBKT      &kp RBKT      &kp PIPE      &tog BT_TEST
-                &kp C_MUTE
-            >;
-            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
-        };
-
-        bt_test_layer {
-            bindings = <
-                &bt BT_CLR         &out OUT_TOG       &out OUT_USB       &out OUT_BLE    // Clear, Toggle, Force USB, Force BLE
-                &bt BT_SEL 0       &bt BT_SEL 1       &bt BT_SEL 2       &bt BT_SEL 3    // BT profiles
-                &bt BT_PRV         &bt BT_NXT         &bt BT_CLR_ALL     &none           // BT navigation, Clear all profiles
-                &kp A              &kp B              &kp C              &tog DEFAULT    // Test keys A,B,C, Return to default
-                &kp ESC
             >;
             sensor-bindings = <&inc_dec_kp PG_UP PG_DN>;
         };
