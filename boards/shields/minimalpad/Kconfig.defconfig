@@ -6,4 +6,23 @@ if SHIELD_MINIMALPAD
 config ZMK_KEYBOARD_NAME
     default "minimalpad"
 
+# Enable ZMK's Bluetooth
+config ZMK_BLE
+    default y
+
+# Configure Bluetooth profiles
+config BT_MAX_CONN
+    default 5
+
+config BT_MAX_PAIRED
+    default 5
+
+# Disable the controller to avoid ticker_update issues
+config BT_CTLR
+    default n
+
+# Improve compatibility 
+config BT_GATT_ENFORCE_SUBSCRIPTION
+    default n
+
 endif
