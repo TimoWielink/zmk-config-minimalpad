@@ -6,8 +6,4 @@ if SHIELD_MINIMALPAD
 config ZMK_KEYBOARD_NAME
     default "minimalpad"
 
-# Enable ZMK's Bluetooth
-config ZMK_BLE
-    default y
-
 endif
