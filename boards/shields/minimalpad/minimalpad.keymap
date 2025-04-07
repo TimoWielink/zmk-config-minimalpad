@@ -220,7 +220,7 @@
 
         default_layer {
             bindings = <
-                &bt_profile_1      &bt_profile_2      &bt_profile_3      &bt_profile_4
+                &bt_profile_1      &bt_profile_2      &bt_profile_3      &studio_unlock
                 &bt_prv_rgb        &bt_nxt_rgb        &out OUT_BLE       &out OUT_TOG
                 &bt_clr_macro      &kp N2             &kp N3             &out OUT_USB
                 &kp N0             &kp DOT            &mo FIGMA          &mo LOWER
