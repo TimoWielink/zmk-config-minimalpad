@@ -53,6 +53,7 @@
         compatible = "alps,ec11";
         a-gpios = <&gpio0 22 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;  // D4
         b-gpios = <&gpio0 10 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;  // D16
+        steps = <24>;  // Reduced steps for more responsive encoder
         status = "okay";
     };
 };

@@ -29,12 +29,19 @@
             bindings = <&bt BT_PRV &rgb_ug RGB_COLOR_HSB(300,100,80)>;
             label = "BT_PREV_WITH_RGB";
         };
+
+        // Fast encoder behavior
+        fast_encoder: fast_encoder {
+            compatible = "zmk,behavior-sensor-rotate";
+            #sensor-binding-cells = <0>;
+            bindings = <&kp>, <&kp>;
+        };
     };
 
     sensors {
         compatible = "zmk,keymap-sensors";
         sensors = <&encoder0>;
-        triggers-per-rotation = <20>;
+        triggers-per-rotation = <10>;
     };
 
     // Define macros for layer-based RGB colors
@@ -134,7 +141,7 @@
                 &kp N0             &kp DOT            &rgb_on_macro      &mo LOWER
                 &kp C_MUTE                                            // Encoder button - Mute
             >;
-            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
+            sensor-bindings = <&fast_encoder C_VOL_UP C_VOL_DN>;
         };
 
         lower_layer {
@@ -145,7 +152,7 @@
                 &bootloader        &sys_reset         &bt_clr_all_macro  &trans
                 &kp C_MUTE
             >;
-            sensor-bindings = <&inc_dec_kp PG_UP PG_DN>;
+            sensor-bindings = <&fast_encoder PG_UP PG_DN>;
         };
     };
 };
