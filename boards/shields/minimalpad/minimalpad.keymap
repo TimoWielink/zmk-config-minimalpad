@@ -8,8 +8,9 @@
 
 #define DEFAULT 0
 #define LOWER   1
-#define EXTRA_1 2
-#define EXTRA_2 3
+#define FIGMA   2
+#define EXTRA_1 3
+#define EXTRA_2 4
 
 / {
     // Define a global RGB control behavior to initialize RGB on startup
@@ -106,6 +107,86 @@
             bindings = <&rgb_ug RGB_ON>;
             label = "RGB_FORCE_ON";
         };
+
+        // Figma-specific macros
+        figma_rgb: figma_rgb {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&rgb_ug RGB_COLOR_HSB(200,100,100)>; // Blue color for Figma layer
+            label = "FIGMA_RGB";
+        };
+        
+        // Frame tool shortcut (F)
+        figma_frame: figma_frame {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&kp F>;
+            label = "FIGMA_FRAME";
+        };
+        
+        // Pen tool shortcut (P)
+        figma_pen: figma_pen {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&kp P>;
+            label = "FIGMA_PEN";
+        };
+        
+        // Rectangle tool shortcut (R)
+        figma_rectangle: figma_rectangle {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&kp R>;
+            label = "FIGMA_RECTANGLE";
+        };
+        
+        // Group objects (Cmd+G)
+        figma_group: figma_group {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&kp LG(G)>;
+            label = "FIGMA_GROUP";
+        };
+        
+        // Ungroup objects (Shift+Cmd+G)
+        figma_ungroup: figma_ungroup {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&kp LS(LG(G))>;
+            label = "FIGMA_UNGROUP";
+        };
+        
+        // Align left (Option+A then L)
+        figma_align_left: figma_align_left {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&kp LA(A) &kp L>;
+            label = "FIGMA_ALIGN_LEFT";
+        };
+        
+        // Align right (Option+A then R)
+        figma_align_right: figma_align_right {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&kp LA(A) &kp R>;
+            label = "FIGMA_ALIGN_RIGHT";
+        };
+        
+        // Align top (Option+A then T)
+        figma_align_top: figma_align_top {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&kp LA(A) &kp T>;
+            label = "FIGMA_ALIGN_TOP";
+        };
+        
+        // Align bottom (Option+A then B)
+        figma_align_bottom: figma_align_bottom {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&kp LA(A) &kp B>;
+            label = "FIGMA_ALIGN_BOTTOM";
+        };
     };
 
     // Define combo behavior to change RGB color when activating layers
@@ -124,6 +205,13 @@
             bindings = <&rgb_default>;
             layers = <1>;
         };
+
+        combo_figma_layer {
+            timeout-ms = <50>;
+            key-positions = <14>; // Position of the Figma layer key
+            bindings = <&figma_rgb>;
+            layers = <0>;
+        };
     };
 
     keymap {
@@ -134,7 +222,7 @@
                 &bt_profile_1      &bt_profile_2      &bt_profile_3      &bt_profile_4
                 &bt_prv_rgb        &bt_nxt_rgb        &out OUT_BLE       &out OUT_TOG
                 &bt_clr_macro      &kp N2             &kp N3             &out OUT_USB
-                &kp N0             &kp DOT            &rgb_on_macro      &mo LOWER
+                &kp N0             &kp DOT            &mo FIGMA          &mo LOWER
                 &kp C_MUTE                                            // Encoder button - Mute
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
@@ -149,6 +237,18 @@
                 &kp C_MUTE
             >;
             sensor-bindings = <&inc_dec_kp PG_UP PG_DN>;
+        };
+        
+        figma_layer {
+            display-name = "Figma";
+            bindings = <
+                &figma_frame       &figma_pen         &figma_rectangle   &kp ESC
+                &figma_align_left  &figma_align_top   &figma_align_right &kp DEL
+                &figma_group       &kp SPACE          &figma_ungroup     &kp TAB
+                &figma_align_bottom &kp LG(Z)         &trans             &to DEFAULT
+                &kp LC(LG(C))  // Color picker shortcut (Ctrl+Cmd+C)
+            >;
+            sensor-bindings = <&inc_dec_kp LG(PLUS) LG(MINUS)>; // Zoom in/out in Figma
         };
         
         extra_1 {
