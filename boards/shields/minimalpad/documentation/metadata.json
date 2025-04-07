@@ -1,0 +1,6 @@
+{
+  "name": "MinimalPad",
+  "description": "A small 4x4 macropad with an encoder",
+  "type": "shield",
+  "flags": ["studio"]
+} 
