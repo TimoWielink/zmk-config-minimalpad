@@ -9,6 +9,7 @@
 #define LOWER   1
 
 / {
+    // Define a global RGB control behavior to initialize RGB on startup
     behaviors {
         // Behavior to cycle through BT profiles with RGB indication
         bt_nxt_rgb: bt_nxt_rgb {
@@ -41,58 +42,66 @@
         rgb_default: rgb_default {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            bindings = <&rgb_ug RGB_COLOR_HSB(140,70,50)>;
+            bindings = <&rgb_ug RGB_ON &rgb_ug RGB_COLOR_HSB(140,100,100)>;
             label = "RGB_DEFAULT";
         };
 
         rgb_lower: rgb_lower {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            bindings = <&rgb_ug RGB_COLOR_HSB(285,80,50)>;
+            bindings = <&rgb_ug RGB_COLOR_HSB(285,80,100)>;
             label = "RGB_LOWER";
         };
 
-        // Bluetooth status indication macros
+        // Bluetooth status indication macros with forced RGB
         bt_profile_1: bt_profile_1 {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            bindings = <&bt BT_SEL 0 &rgb_ug RGB_COLOR_HSB(0,100,50)>; // Red
+            bindings = <&rgb_ug RGB_ON &bt BT_SEL 0 &rgb_ug RGB_COLOR_HSB(0,100,100)>; // Red
             label = "BT_PROFILE_1";
         };
 
         bt_profile_2: bt_profile_2 {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            bindings = <&bt BT_SEL 1 &rgb_ug RGB_COLOR_HSB(30,100,50)>; // Orange
+            bindings = <&rgb_ug RGB_ON &bt BT_SEL 1 &rgb_ug RGB_COLOR_HSB(30,100,100)>; // Orange
             label = "BT_PROFILE_2";
         };
 
         bt_profile_3: bt_profile_3 {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            bindings = <&bt BT_SEL 2 &rgb_ug RGB_COLOR_HSB(60,100,50)>; // Yellow
+            bindings = <&rgb_ug RGB_ON &bt BT_SEL 2 &rgb_ug RGB_COLOR_HSB(60,100,100)>; // Yellow
             label = "BT_PROFILE_3";
         };
 
         bt_profile_4: bt_profile_4 {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            bindings = <&bt BT_SEL 3 &rgb_ug RGB_COLOR_HSB(90,100,50)>; // Green
+            bindings = <&rgb_ug RGB_ON &bt BT_SEL 3 &rgb_ug RGB_COLOR_HSB(90,100,100)>; // Green
             label = "BT_PROFILE_4";
         };
 
         bt_clr_macro: bt_clr_macro {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            bindings = <&bt BT_CLR &rgb_ug RGB_COLOR_HSB(210,100,80)>; // Blue for clearing
+            bindings = <&rgb_ug RGB_ON &bt BT_CLR &rgb_ug RGB_COLOR_HSB(210,100,100)>; // Blue for clearing
             label = "BT_CLEAR";
         };
         
         bt_clr_all_macro: bt_clr_all_macro {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            bindings = <&bt BT_CLR_ALL &rgb_ug RGB_COLOR_HSB(270,100,80)>; // Purple for clearing all
+            bindings = <&rgb_ug RGB_ON &bt BT_CLR_ALL &rgb_ug RGB_COLOR_HSB(270,100,100)>; // Purple for clearing all
             label = "BT_CLEAR_ALL";
+        };
+
+        // Force RGB on macro
+        rgb_on_macro: rgb_on_macro {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&rgb_ug RGB_ON &rgb_ug RGB_BRI 100>;
+            label = "RGB_FORCE_ON";
         };
     };
 
@@ -121,8 +130,8 @@
             bindings = <
                 &bt_profile_1      &bt_profile_2      &bt_profile_3      &bt_profile_4
                 &bt_prv_rgb        &bt_nxt_rgb        &out OUT_BLE       &out OUT_TOG
-                &kp N1             &kp N2             &kp N3             &out OUT_USB
-                &kp N0             &kp DOT            &kp ENTER          &mo LOWER
+                &bt_clr            &kp N2             &kp N3             &out OUT_USB
+                &kp N0             &kp DOT            &rgb_on_macro      &mo LOWER
                 &bt_clr_macro                                            // Encoder button - BT clear
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
