@@ -96,11 +96,11 @@
             label = "BT_CLEAR_ALL";
         };
 
-        // Force RGB on macro
+        // Force RGB on macro - fixed version
         rgb_on_macro: rgb_on_macro {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
-            bindings = <&rgb_ug RGB_ON &rgb_ug RGB_BRI 100>;
+            bindings = <&rgb_ug RGB_ON>;
             label = "RGB_FORCE_ON";
         };
     };
