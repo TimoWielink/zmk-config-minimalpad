@@ -9,6 +9,27 @@
 #define LOWER   1
 
 / {
+    behaviors {
+        // Behavior to cycle through BT profiles with RGB indication
+        bt_nxt_rgb: bt_nxt_rgb {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            wait-ms = <100>;
+            tap-ms = <5>;
+            bindings = <&bt BT_NXT &rgb_ug RGB_COLOR_HSB(180,100,80)>;
+            label = "BT_NEXT_WITH_RGB";
+        };
+        
+        bt_prv_rgb: bt_prv_rgb {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            wait-ms = <100>;
+            tap-ms = <5>;
+            bindings = <&bt BT_PRV &rgb_ug RGB_COLOR_HSB(300,100,80)>;
+            label = "BT_PREV_WITH_RGB";
+        };
+    };
+
     sensors {
         compatible = "zmk,keymap-sensors";
         sensors = <&encoder0>;
@@ -66,21 +87,28 @@
             bindings = <&bt BT_CLR &rgb_ug RGB_COLOR_HSB(210,100,80)>; // Blue for clearing
             label = "BT_CLEAR";
         };
+        
+        bt_clr_all_macro: bt_clr_all_macro {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&bt BT_CLR_ALL &rgb_ug RGB_COLOR_HSB(270,100,80)>; // Purple for clearing all
+            label = "BT_CLEAR_ALL";
+        };
     };
 
-    // Define combo behavior to change RGB color when activating lower layer
+    // Define combo behavior to change RGB color when activating layers
     combos {
         compatible = "zmk,combos";
         combo_lower_layer {
             timeout-ms = <50>;
-            key-positions = <15>; // Position of the lower layer key
+            key-positions = <15>; // Position of the layer key
             bindings = <&rgb_lower>;
             layers = <0>;
         };
 
-        combo_default_layer {
+        combo_default_layer_from_lower {
             timeout-ms = <50>;
-            key-positions = <15>; // Position of the lower layer key (when releasing)
+            key-positions = <15>; // Position of the layer key (when releasing)
             bindings = <&rgb_default>;
             layers = <1>;
         };
@@ -91,11 +119,11 @@
 
         default_layer {
             bindings = <
-                &kp N7        &kp N8        &kp N9        &kp BSPC
-                &kp N4        &kp N5        &kp N6        &kp PLUS
-                &kp N1        &kp N2        &kp N3        &kp MINUS
-                &kp N0        &kp DOT       &kp ENTER     &mo LOWER
-                &kp C_MUTE                                           // Encoder button
+                &bt_profile_1      &bt_profile_2      &bt_profile_3      &bt_profile_4
+                &bt_prv_rgb        &bt_nxt_rgb        &out OUT_BLE       &out OUT_TOG
+                &kp N1             &kp N2             &kp N3             &out OUT_USB
+                &kp N0             &kp DOT            &kp ENTER          &mo LOWER
+                &bt_clr_macro                                            // Encoder button - BT clear
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
         };
@@ -103,9 +131,9 @@
         lower_layer {
             bindings = <
                 &rgb_ug RGB_TOG    &rgb_ug RGB_EFF    &rgb_ug RGB_BRI    &rgb_ug RGB_HUI
-                &bt_profile_1      &bt_profile_2      &bt_profile_3      &bt_profile_4
-                &bt_clr_macro      &out OUT_TOG       &out OUT_BLE       &out OUT_USB
-                &bootloader        &sys_reset         &none              &trans
+                &kp N7             &kp N8             &kp N9             &kp BSPC
+                &kp N4             &kp N5             &kp N6             &kp PLUS
+                &bootloader        &sys_reset         &bt_clr_all_macro  &trans
                 &kp C_MUTE
             >;
             sensor-bindings = <&inc_dec_kp PG_UP PG_DN>;
