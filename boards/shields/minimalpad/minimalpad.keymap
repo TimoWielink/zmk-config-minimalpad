@@ -130,7 +130,7 @@
             bindings = <
                 &bt_profile_1      &bt_profile_2      &bt_profile_3      &bt_profile_4
                 &bt_prv_rgb        &bt_nxt_rgb        &out OUT_BLE       &out OUT_TOG
-                &bt_clr            &kp N2             &kp N3             &out OUT_USB
+                &bt_clr_macro      &kp N2             &kp N3             &out OUT_USB
                 &kp N0             &kp DOT            &rgb_on_macro      &mo LOWER
                 &bt_clr_macro                                            // Encoder button - BT clear
             >;
