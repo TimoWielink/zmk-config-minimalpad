@@ -30,6 +30,42 @@
             bindings = <&rgb_ug RGB_COLOR_HSB(285,80,50)>;
             label = "RGB_LOWER";
         };
+
+        // Bluetooth status indication macros
+        bt_profile_1: bt_profile_1 {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&bt BT_SEL 0 &rgb_ug RGB_COLOR_HSB(0,100,50)>; // Red
+            label = "BT_PROFILE_1";
+        };
+
+        bt_profile_2: bt_profile_2 {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&bt BT_SEL 1 &rgb_ug RGB_COLOR_HSB(30,100,50)>; // Orange
+            label = "BT_PROFILE_2";
+        };
+
+        bt_profile_3: bt_profile_3 {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&bt BT_SEL 2 &rgb_ug RGB_COLOR_HSB(60,100,50)>; // Yellow
+            label = "BT_PROFILE_3";
+        };
+
+        bt_profile_4: bt_profile_4 {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&bt BT_SEL 3 &rgb_ug RGB_COLOR_HSB(90,100,50)>; // Green
+            label = "BT_PROFILE_4";
+        };
+
+        bt_clr_macro: bt_clr_macro {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&bt BT_CLR &rgb_ug RGB_COLOR_HSB(210,100,80)>; // Blue for clearing
+            label = "BT_CLEAR";
+        };
     };
 
     // Define combo behavior to change RGB color when activating lower layer
@@ -67,8 +103,8 @@
         lower_layer {
             bindings = <
                 &rgb_ug RGB_TOG    &rgb_ug RGB_EFF    &rgb_ug RGB_BRI    &rgb_ug RGB_HUI
-                &bt BT_SEL 0       &bt BT_SEL 1       &bt BT_SEL 2       &bt BT_SEL 3
-                &bt BT_CLR         &out OUT_TOG       &out OUT_BLE       &out OUT_USB
+                &bt_profile_1      &bt_profile_2      &bt_profile_3      &bt_profile_4
+                &bt_clr_macro      &out OUT_TOG       &out OUT_BLE       &out OUT_USB
                 &bootloader        &sys_reset         &none              &trans
                 &kp C_MUTE
             >;
