@@ -15,6 +15,41 @@
         triggers-per-rotation = <20>;
     };
 
+    // Define macros for layer-based RGB colors
+    macros {
+        rgb_default: rgb_default {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&rgb_ug RGB_COLOR_HSB(140,70,50)>;
+            label = "RGB_DEFAULT";
+        };
+
+        rgb_lower: rgb_lower {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&rgb_ug RGB_COLOR_HSB(285,80,50)>;
+            label = "RGB_LOWER";
+        };
+    };
+
+    // Define combo behavior to change RGB color when activating lower layer
+    combos {
+        compatible = "zmk,combos";
+        combo_lower_layer {
+            timeout-ms = <50>;
+            key-positions = <15>; // Position of the lower layer key
+            bindings = <&rgb_lower>;
+            layers = <0>;
+        };
+
+        combo_default_layer {
+            timeout-ms = <50>;
+            key-positions = <15>; // Position of the lower layer key (when releasing)
+            bindings = <&rgb_default>;
+            layers = <1>;
+        };
+    };
+
     keymap {
         compatible = "zmk,keymap";
 
