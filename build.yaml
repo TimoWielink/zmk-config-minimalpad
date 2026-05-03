@@ -19,10 +19,10 @@
 #
 ---
 include:
-  - board: nice_nano_v2
+  - board: nice_nano//zmk
     shield: minimalpad
     snippet: nrf52840-nosd
-  - board: nice_nano_v2
+  - board: nice_nano//zmk
     shield: minimalpad
     snippet: studio-rpc-usb-uart nrf52840-nosd
     cmake-args: -DCONFIG_ZMK_STUDIO=y
