@@ -3,259 +3,72 @@
 #include <dt-bindings/zmk/bt.h>
 #include <dt-bindings/zmk/rgb.h>
 #include <dt-bindings/zmk/outputs.h>
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/zmk/ext_power.h>
 
-
-#define DEFAULT 0
-#define LOWER   1
-#define FIGMA   2
-#define EXTRA_1 3
-#define EXTRA_2 4
+#define DEFAULT   0
+#define SHORTCUTS 1
 
 / {
-    // Define a global RGB control behavior to initialize RGB on startup
-    behaviors {
-        // Behavior to cycle through BT profiles with RGB indication
-        bt_nxt_rgb: bt_nxt_rgb {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            wait-ms = <100>;
-            tap-ms = <5>;
-            bindings = <&bt BT_NXT &rgb_ug RGB_COLOR_HSB(180,100,80)>;
-            label = "BT_NEXT_WITH_RGB";
-        };
-        
-        bt_prv_rgb: bt_prv_rgb {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            wait-ms = <100>;
-            tap-ms = <5>;
-            bindings = <&bt BT_PRV &rgb_ug RGB_COLOR_HSB(300,100,80)>;
-            label = "BT_PREV_WITH_RGB";
-        };
-    };
-
     sensors {
         compatible = "zmk,keymap-sensors";
         sensors = <&encoder0>;
         triggers-per-rotation = <10>;
     };
 
-    // Define macros for layer-based RGB colors
-    macros {
-        rgb_default: rgb_default {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&rgb_ug RGB_ON &rgb_ug RGB_COLOR_HSB(140,100,100)>;
-            label = "RGB_DEFAULT";
-        };
-
-        rgb_lower: rgb_lower {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&rgb_ug RGB_COLOR_HSB(285,80,100)>;
-            label = "RGB_LOWER";
-        };
-
-        // Bluetooth status indication macros with forced RGB
-        bt_profile_1: bt_profile_1 {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&rgb_ug RGB_ON &bt BT_SEL 0 &rgb_ug RGB_COLOR_HSB(0,100,100)>; // Red
-            label = "BT_PROFILE_1";
-        };
-
-        bt_profile_2: bt_profile_2 {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&rgb_ug RGB_ON &bt BT_SEL 1 &rgb_ug RGB_COLOR_HSB(30,100,100)>; // Orange
-            label = "BT_PROFILE_2";
-        };
-
-        bt_profile_3: bt_profile_3 {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&rgb_ug RGB_ON &bt BT_SEL 2 &rgb_ug RGB_COLOR_HSB(60,100,100)>; // Yellow
-            label = "BT_PROFILE_3";
-        };
-
-        bt_profile_4: bt_profile_4 {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&rgb_ug RGB_ON &bt BT_SEL 3 &rgb_ug RGB_COLOR_HSB(90,100,100)>; // Green
-            label = "BT_PROFILE_4";
-        };
-
-        bt_clr_macro: bt_clr_macro {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&rgb_ug RGB_ON &bt BT_CLR &rgb_ug RGB_COLOR_HSB(210,100,100)>; // Blue for clearing
-            label = "BT_CLEAR";
-        };
-        
-        bt_clr_all_macro: bt_clr_all_macro {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&rgb_ug RGB_ON &bt BT_CLR_ALL &rgb_ug RGB_COLOR_HSB(270,100,100)>; // Purple for clearing all
-            label = "BT_CLEAR_ALL";
-        };
-
-        // Force RGB on macro - fixed version
-        rgb_on_macro: rgb_on_macro {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&rgb_ug RGB_ON>;
-            label = "RGB_FORCE_ON";
-        };
-
-        // Figma-specific macros
-        figma_rgb: figma_rgb {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&rgb_ug RGB_COLOR_HSB(200,100,100)>; // Blue color for Figma layer
-            label = "FIGMA_RGB";
-        };
-        
-        // Frame tool shortcut (F)
-        figma_frame: figma_frame {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&kp F>;
-            label = "FIGMA_FRAME";
-        };
-        
-        // Pen tool shortcut (P)
-        figma_pen: figma_pen {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&kp P>;
-            label = "FIGMA_PEN";
-        };
-        
-        // Rectangle tool shortcut (R)
-        figma_rectangle: figma_rectangle {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&kp R>;
-            label = "FIGMA_RECTANGLE";
-        };
-        
-        // Group objects (Cmd+G)
-        figma_group: figma_group {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&kp LG(G)>;
-            label = "FIGMA_GROUP";
-        };
-        
-        // Ungroup objects (Shift+Cmd+G)
-        figma_ungroup: figma_ungroup {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&kp LS(LG(G))>;
-            label = "FIGMA_UNGROUP";
-        };
-        
-        // Align left (Option+A then L)
-        figma_align_left: figma_align_left {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&kp LA(A) &kp L>;
-            label = "FIGMA_ALIGN_LEFT";
-        };
-        
-        // Align right (Option+A then R)
-        figma_align_right: figma_align_right {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&kp LA(A) &kp R>;
-            label = "FIGMA_ALIGN_RIGHT";
-        };
-        
-        // Align top (Option+A then T)
-        figma_align_top: figma_align_top {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&kp LA(A) &kp T>;
-            label = "FIGMA_ALIGN_TOP";
-        };
-        
-        // Align bottom (Option+A then B)
-        figma_align_bottom: figma_align_bottom {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            bindings = <&kp LA(A) &kp B>;
-            label = "FIGMA_ALIGN_BOTTOM";
-        };
-    };
-
-    // Define combo behavior to change RGB color when activating layers
-    combos {
-        compatible = "zmk,combos";
-        combo_lower_layer {
-            timeout-ms = <50>;
-            key-positions = <15>; // Position of the layer key
-            bindings = <&rgb_lower>;
-            layers = <0>;
-        };
-
-        combo_default_layer_from_lower {
-            timeout-ms = <50>;
-            key-positions = <15>; // Position of the layer key (when releasing)
-            bindings = <&rgb_default>;
-            layers = <1>;
-        };
-
-        combo_figma_layer {
-            timeout-ms = <50>;
-            key-positions = <14>; // Position of the Figma layer key
-            bindings = <&figma_rgb>;
-            layers = <0>;
-        };
-    };
-
     keymap {
         compatible = "zmk,keymap";
 
+        // ┌──────────┬──────────┬──────────┬──────────┐
+        // │  C_PREV  │  C_PP    │  C_NEXT  │  UNLOCK  │
+        // ├──────────┼──────────┼──────────┼──────────┤
+        // │ RGB TOG  │ RGB EFF→ │ RGB BRI+ │ RGB HUE+ │
+        // ├──────────┼──────────┼──────────┼──────────┤
+        // │ OUT TOG  │ RGB EFF← │ RGB BRI- │ RGB HUE- │
+        // ├──────────┼──────────┼──────────┼──────────┤
+        // │  BT CLR  │  RESET   │  BOOT    │ [HOLD→2] │
+        // ├──────────┴──────────┴──────────┴──────────┤
+        // │              MUTE (encoder btn)            │
+        // └────────────────────────────────────────────┘
+        //   Encoder: Volume Up / Volume Down
         default_layer {
+            display-name = "Media";
             bindings = <
-                &bt_profile_1      &bt_profile_2      &bt_profile_3      &studio_unlock
-                &bt_prv_rgb        &bt_nxt_rgb        &out OUT_BLE       &out OUT_TOG
-                &bt_clr_macro      &kp N2             &kp N3             &out OUT_USB
-                &kp N0             &kp DOT            &mo FIGMA          &mo LOWER
-                &kp C_MUTE                                            // Encoder button - Mute
+                &kp C_PREV         &kp C_PP           &kp C_NEXT         &studio_unlock
+                &rgb_ug RGB_TOG    &rgb_ug RGB_EFF    &rgb_ug RGB_BRI    &rgb_ug RGB_HUI
+                &out OUT_TOG       &rgb_ug RGB_EFR    &rgb_ug RGB_BRD    &rgb_ug RGB_HUD
+                &bt BT_CLR         &sys_reset         &bootloader        &mo SHORTCUTS
+                &kp C_MUTE
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
         };
 
-        lower_layer {
+        // ┌──────────┬──────────┬──────────┬──────────┐
+        // │   UNDO   │   REDO   │   COPY   │   PASTE  │
+        // ├──────────┼──────────┼──────────┼──────────┤
+        // │   CUT    │ SEL ALL  │   FIND   │   SAVE   │
+        // ├──────────┼──────────┼──────────┼──────────┤
+        // │SCREENSHOT│  NEW TAB │ CLOSE TAB│REOPEN TAB│
+        // ├──────────┼──────────┼──────────┼──────────┤
+        // │ APP SWTCH│ MISS CTL │  EXPOSÉ  │  [HOLD]  │
+        // ├──────────┴──────────┴──────────┴──────────┤
+        // │            SPOTLIGHT (encoder btn)         │
+        // └────────────────────────────────────────────┘
+        //   Encoder: Page Up / Page Down
+        shortcuts_layer {
+            display-name = "Shortcuts";
             bindings = <
-                &rgb_ug RGB_TOG    &rgb_ug RGB_EFF    &rgb_ug RGB_BRI    &rgb_ug RGB_HUI
-                &kp N7             &kp N8             &kp N9             &kp BSPC
-                &kp N4             &kp N5             &kp N6             &studio_unlock
-                &bootloader        &sys_reset         &bt_clr_all_macro  &trans
-                &kp C_MUTE
+                &kp LG(Z)          &kp LS(LG(Z))      &kp LG(C)          &kp LG(V)
+                &kp LG(X)          &kp LG(A)          &kp LG(F)          &kp LG(S)
+                &kp LS(LG(N4))     &kp LG(T)          &kp LG(W)          &kp LS(LG(T))
+                &kp LG(TAB)        &kp LC(UP)         &kp LC(DOWN)       &trans
+                &kp LG(SPACE)
             >;
             sensor-bindings = <&inc_dec_kp PG_UP PG_DN>;
         };
-        
-        figma_layer {
-            display-name = "Figma";
-            bindings = <
-                &figma_frame       &figma_pen         &figma_rectangle   &kp ESC
-                &figma_align_left  &figma_align_top   &figma_align_right &kp DEL
-                &figma_group       &kp SPACE          &figma_ungroup     &kp TAB
-                &figma_align_bottom &kp LG(Z)         &trans             &to DEFAULT
-                &kp LC(LG(C))  // Color picker shortcut (Ctrl+Cmd+C)
-            >;
-            sensor-bindings = <&inc_dec_kp LG(PLUS) LG(MINUS)>; // Zoom in/out in Figma
-        };
-        
+
         extra_1 {
             status = "reserved";
         };
-        
+
         extra_2 {
             status = "reserved";
         };
