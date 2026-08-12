@@ -6,12 +6,24 @@
 
 #define DEFAULT   0
 #define SHORTCUTS 1
+#define LED       2
 
 / {
     sensors {
         compatible = "zmk,keymap-sensors";
         sensors = <&encoder0>;
         triggers-per-rotation = <10>;
+    };
+
+    behaviors {
+        // Encoder rotation → RGB brightness (used on the LED layer).
+        // inc_dec_kp only wraps key presses, so RGB needs a dedicated
+        // sensor-rotate behavior. CW = brighter, CCW = dimmer.
+        rgb_encoder: rgb_encoder {
+            compatible = "zmk,behavior-sensor-rotate";
+            #sensor-binding-cells = <0>;
+            bindings = <&rgb_ug RGB_BRI>, <&rgb_ug RGB_BRD>;
+        };
     };
 
     keymap {
@@ -21,8 +33,8 @@
         // ║  PREV    ║  PLAY/   ║  NEXT    ║  MUTE    ║  Media transport + mute
         // ║  TRACK   ║  PAUSE   ║  TRACK   ║          ║
         // ╠══════════╬══════════╬══════════╬══════════╣
-        // ║ RGB TOG  ║ RGB NEXT ║ RGB BRI+ ║ RGB HUE+ ║  RGB underglow controls
-        // ║          ║  EFFECT  ║          ║          ║
+        // ║ BT PROF  ║ BT PROF  ║ BT CLEAR ║ RGB      ║  BT profiles 4/5 + reset + lights
+        // ║    4     ║    5     ║   ALL    ║ TOGGLE   ║
         // ╠══════════╬══════════╬══════════╬══════════╣
         // ║ BT PROF  ║ BT PROF  ║ BT PROF  ║ BT CLEAR ║  Bluetooth profiles
         // ║    1     ║    2     ║    3     ║ this dev ║
@@ -30,17 +42,17 @@
         // ║ BT PREV  ║ BT NEXT  ║ USB/BLE  ║ [HOLD]→  ║  BT nav + output + layer
         // ║ PROFILE  ║ PROFILE  ║  TOGGLE  ║ SHORTCUT ║
         // ╠══════════╩══════════╩══════════╩══════════╣
-        // ║              PLAY/PAUSE (encoder btn)      ║
+        // ║   TAP: PLAY/PAUSE   HOLD: LED layer        ║  encoder button = layer-tap
         // ╚════════════════════════════════════════════╝
         //   Encoder rotation: Volume Up / Volume Down
         default_layer {
             display-name = "Media";
             bindings = <
                 &kp C_PREV         &kp C_PP           &kp C_NEXT         &kp C_MUTE
-                &rgb_ug RGB_TOG    &rgb_ug RGB_EFF    &rgb_ug RGB_BRI    &rgb_ug RGB_HUI
+                &bt BT_SEL 3       &bt BT_SEL 4       &bt BT_CLR_ALL     &rgb_ug RGB_TOG
                 &bt BT_SEL 0       &bt BT_SEL 1       &bt BT_SEL 2       &bt BT_CLR
                 &bt BT_PRV         &bt BT_NXT         &out OUT_TOG       &mo SHORTCUTS
-                &kp C_PP
+                &lt LED C_PP
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
         };
@@ -73,8 +85,29 @@
             sensor-bindings = <&inc_dec_kp PG_UP PG_DN>;
         };
 
-        extra_1 {
-            status = "reserved";
+        // ╔══════════╦══════════╦══════════╦══════════╗
+        // ║  RED     ║  GREEN   ║  BLUE    ║  WHITE   ║  Color presets (edit in Studio)
+        // ╠══════════╬══════════╬══════════╬══════════╣
+        // ║  HUE +   ║  HUE −   ║  SAT +   ║  SAT −   ║  Color tuning
+        // ╠══════════╬══════════╬══════════╬══════════╣
+        // ║  BRI +   ║  BRI −   ║ SPEED +  ║ SPEED −  ║  Brightness + animation speed
+        // ╠══════════╬══════════╬══════════╬══════════╣
+        // ║ EFFECT → ║ EFFECT ← ║  ON/OFF  ║    —     ║  Effect cycle + toggle
+        // ╠══════════╩══════════╩══════════╩══════════╣
+        // ║        (encoder btn — release to exit)     ║
+        // ╚════════════════════════════════════════════╝
+        //   Active while the encoder button is held (from the Media layer).
+        //   Encoder rotation here: Brightness Up / Brightness Down.
+        led_layer {
+            display-name = "LED";
+            bindings = <
+                &rgb_ug RGB_COLOR_HSB(0,100,80)    &rgb_ug RGB_COLOR_HSB(120,100,80)   &rgb_ug RGB_COLOR_HSB(240,100,80)   &rgb_ug RGB_COLOR_HSB(0,0,90)
+                &rgb_ug RGB_HUI    &rgb_ug RGB_HUD    &rgb_ug RGB_SAI    &rgb_ug RGB_SAD
+                &rgb_ug RGB_BRI    &rgb_ug RGB_BRD    &rgb_ug RGB_SPI    &rgb_ug RGB_SPD
+                &rgb_ug RGB_EFF    &rgb_ug RGB_EFR    &rgb_ug RGB_TOG    &none
+                &trans
+            >;
+            sensor-bindings = <&rgb_encoder>;
         };
 
         extra_2 {
