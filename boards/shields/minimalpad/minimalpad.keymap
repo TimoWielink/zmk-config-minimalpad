@@ -37,20 +37,21 @@
         // ║ REWIND   ║  FAST    ║ SCREEN   ║ SCREEN   ║  Scrub + screen brightness
         // ║          ║  FWD     ║ BRI −    ║ BRI +    ║
         // ╠══════════╬══════════╬══════════╬══════════╣
-        // ║  VOL −   ║  VOL +   ║  PLAY/   ║  MUTE    ║  Quick controls (lower reach)
-        // ║          ║          ║  PAUSE   ║          ║
+        // ║  VOL −   ║  VOL +   ║  PLAY/   ║ [HOLD]→  ║  Quick controls + layer hold
+        // ║          ║          ║  PAUSE   ║ BT + LED ║
         // ╠══════════╩══════════╩══════════╩══════════╣
-        // ║   TAP: PLAY/PAUSE   HOLD: BT + LED layer   ║  encoder button = layer-tap
+        // ║        PLAY / PAUSE  (encoder button)      ║
         // ╚════════════════════════════════════════════╝
         //   Encoder rotation: Volume Up / Volume Down
+        //   Hold the BOTTOM-RIGHT key to reach the BT + LED layer.
         media_layer {
             display-name = "Media";
             bindings = <
                 &kp C_PREV      &kp C_PP        &kp C_NEXT      &kp C_MUTE
                 &kp C_VOL_DN    &kp C_VOL_UP    &kp C_STOP      &kp C_EJECT
                 &kp C_RW        &kp C_FF        &kp C_BRI_DN    &kp C_BRI_UP
-                &kp C_VOL_DN    &kp C_VOL_UP    &kp C_PP        &kp C_MUTE
-                &lt BTLED C_PP
+                &kp C_VOL_DN    &kp C_VOL_UP    &kp C_PP        &mo BTLED
+                &kp C_PP
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
         };
@@ -78,7 +79,7 @@
                 &bt BT_SEL 0    &bt BT_SEL 1    &bt BT_SEL 2    &bt BT_SEL 3
                 &bt BT_SEL 4    &bt BT_NXT      &bt BT_PRV      &out OUT_TOG
                 &rgb_ug RGB_BRI &rgb_ug RGB_BRD &rgb_ug RGB_SPI &rgb_ug RGB_SPD
-                &rgb_ug RGB_HUI &rgb_ug RGB_EFF &rgb_ug RGB_TOG &none
+                &rgb_ug RGB_HUI &rgb_ug RGB_EFF &rgb_ug RGB_TOG &trans
                 &trans
             >;
             sensor-bindings = <&rgb_encoder>;
