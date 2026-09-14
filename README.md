@@ -125,7 +125,7 @@ The firmware uses [semantic versioning](https://semver.org). Its version, such a
 | Build | Artifact to download |
 | --- | --- |
 | A push to a branch | `minimalpad-v0.2.0+18a503a`: the version, then the commit it was built from |
-| A release tag | `minimalpad-v0.2.0` |
+| A release tag | `minimalpad-v0.2.0`, and a GitHub Release with the `.uf2` files |
 
 After a release, raise the version in the first commit that changes the firmware. Pick the part by the biggest change until the next release:
 
@@ -133,14 +133,17 @@ After a release, raise the version in the first commit that changes the firmware
 - **Minor** (`0.2.1` to `0.3.0`): something new that works with your setup as it is, such as the idle fade.
 - **Major** (`0.3.0` to `1.0.0`): a change that needs something redone, such as a new layer layout, pairing again, or updating Minimalpad Studio to reach the pad.
 
-To release, tag the commit whose `VERSION` has that version, and push the tag:
+To release a version:
 
-```sh
-git tag v0.2.0
-git push origin v0.2.0
-```
+1. In [CHANGELOG.md](CHANGELOG.md), write what it changes under a heading with its number, such as `## 0.2.0`. This becomes the release's description, so write it for the people who will flash it.
+2. Tag the commit whose `VERSION` has that version, and push the tag:
 
-The build fails if the tag and `VERSION` disagree. What each version changed is in [CHANGELOG.md](CHANGELOG.md).
+   ```sh
+   git tag v0.2.0
+   git push origin v0.2.0
+   ```
+
+GitHub Actions builds the firmware and publishes a release called "Minimalpad firmware v0.2.0". It holds `minimalpad_with_studio-v0.2.0.uf2` and `minimalpad-v0.2.0.uf2`. Its description is your changelog section, followed by which file to flash and how ([.github/release-notes.md](.github/release-notes.md)). Before building, it stops if the tag and `VERSION` disagree or the changelog has nothing for that version. Then delete the tag with `git tag -d v0.2.0` and `git push origin :v0.2.0`, fix what the error says, and tag again.
 
 ## Additional Resources
 - [ZMK Documentation](https://zmk.dev/docs/)

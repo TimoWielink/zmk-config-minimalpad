@@ -19,9 +19,12 @@
 #
 ---
 include:
+  # The artifact names below are the .uf2 file names, and a release adds the version to
+  # each. .github/release-notes.md names both files, so change it along with them.
   - board: nice_nano//zmk
     shield: minimalpad
     snippet: nrf52840-nosd
+    artifact-name: minimalpad
   - board: nice_nano//zmk
     shield: minimalpad
     snippet: studio-rpc-usb-uart nrf52840-nosd
