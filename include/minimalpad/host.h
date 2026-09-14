@@ -111,6 +111,13 @@ void mp_host_broadcast(uint8_t event, const void *payload, uint8_t len);
 void mp_host_host_arrived(const struct mp_host_transport *transport);
 
 /*
+ * The underglow switched on or off with no ZMK event to say so, as at the end
+ * of the idle fade (src/leds/idle_fade.c), so the pad sends STATE if its LED
+ * flag changed. Safe from any thread.
+ */
+void mp_host_leds_changed(void);
+
+/*
  * The dial keycodes the last SET_PROFILE carried with its dial flag set, for
  * the dial swap still to come. Returns false when the pad's own dial binding
  * applies.

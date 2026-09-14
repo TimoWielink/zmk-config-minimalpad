@@ -95,6 +95,29 @@ After flashing, test your keymap by pressing the configured keys. If something i
 
 This firmware includes the **host module**, which lets Minimalpad Studio, the Mac app, switch the pad to an app's profile layer and set its colour while you work. Without Studio running, the pad behaves exactly as its keymap says, and it returns to its Default layer on its own when Studio goes away. It is on by default and does not change how you build or flash. What it does, its settings and how to turn it off are in [docs/host-module.md](docs/host-module.md).
 
+## Lighting, idle and battery
+
+When you leave the pad alone, its lights go out but it stays connected.
+
+- **Idle.** 30 seconds after your last key press or dial turn, the underglow fades out over 8 seconds, then switches off and cuts power to the LEDs. Press a key or turn the dial to bring it straight back. That press also works as normal.
+- **Sleep.** On battery, the pad deep-sleeps after 12 hours without a key press or dial turn, for example overnight. Bluetooth disconnects while it sleeps. The key press that wakes it is used up waking it, and it reconnects within a few seconds. On USB it never sleeps.
+- **Battery.** The LEDs are what drain the battery. By ZMK's own estimates, a nice!nano v2 with its LEDs off draws about 40 µA while connected and about 20 µA asleep, while 16 lit LEDs can draw over 100 mA at full brightness. Staying connected with the lights off costs very little.
+
+To change this, edit `boards/shields/minimalpad/minimalpad.conf`:
+
+| Setting | Now | What it does |
+| --- | --- | --- |
+| `CONFIG_ZMK_IDLE_TIMEOUT` | `30000` | Milliseconds without a key press or dial turn before the lights start to fade |
+| `CONFIG_MINIMALPAD_LEDS_IDLE_FADE_MS` | `8000` | How long the fade takes. `0` switches the lights off at once |
+| `CONFIG_ZMK_IDLE_SLEEP_TIMEOUT` | `43200000` | Milliseconds without a key press or dial turn before deep sleep, on battery (12 hours) |
+| `CONFIG_ZMK_SLEEP` | `y` | Set to `n` and the pad never deep-sleeps |
+
+Good to know:
+
+- The breathe effect sets its own brightness, so it does not dim. It keeps pulsing until the fade time is up, then switches off.
+- If the pad restarts while its lights are off for idle, for example waking from sleep, a reset or a flat battery, the lights come back on. Earlier firmware left them off. So after you flash this version for the first time, the lights may stay dark. Switch them on once: hold the bottom-right key and press the third key on the bottom row (LED on/off).
+- The fade is in `src/leds/idle_fade.c`. It takes the place of ZMK's `CONFIG_ZMK_RGB_UNDERGLOW_AUTO_OFF_IDLE`, which switches the lights off at once.
+
 ## Additional Resources
 - [ZMK Documentation](https://zmk.dev/docs/)
 - [ZMK Keymap Guide](https://zmk.dev/docs/features/keymaps)

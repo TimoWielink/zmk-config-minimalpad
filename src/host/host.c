@@ -45,6 +45,8 @@
 
 #if IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW)
 #include <zmk/rgb_underglow.h>
+
+#include <minimalpad/leds.h>
 #endif
 
 #if IS_ENABLED(CONFIG_ZMK_USB)
@@ -196,7 +198,8 @@ static bool leds_in_range(uint16_t hue, uint8_t saturation, uint8_t brightness) 
  * The pad's own underglow, taken just before the first host colour replaces it
  * and put back on fallback. zmk_rgb_underglow_set_hsb() takes hue in degrees and
  * saturation and brightness in percent, the protocol's own units, so colours
- * pass through unconverted.
+ * pass through unconverted. Colours go through leds.h, so one taken or set
+ * while the LEDs fade out for idle is the pad's and not a dimmed step.
  */
 struct leds_snapshot {
     struct zmk_led_hsb color;
@@ -215,11 +218,11 @@ static bool leds_snapshot_held;
 
 /*
  * The snapshot is kept in flash as well as in RAM. ZMK saves the whole underglow
- * state, colour included, whenever the LEDs go idle, and this pad deep-sleeps
- * after ten minutes, which is a reboot. Without its own copy, a pad that sleeps
- * or loses power on a profile would wake in the profile's colour, and the next
- * snapshot would take that colour for the pad's. It costs a write per stretch of
- * host control, not per switch.
+ * state, colour included, whenever the LEDs go off for idle, and waking from
+ * deep sleep is a reboot. Without its own copy, a pad that sleeps or loses power
+ * on a profile would wake in the profile's colour, and the next snapshot would
+ * take that colour for the pad's. It costs a write per stretch of host control,
+ * not per switch.
  */
 static void leds_snapshot_save(struct k_work *work) {
     int err = settings_save_one(LEDS_SNAPSHOT_SETTING, &leds_snapshot, sizeof(leds_snapshot));
@@ -243,9 +246,9 @@ static K_WORK_DELAYABLE_DEFINE(leds_snapshot_forget_work, leds_snapshot_forget);
 
 static void leds_apply(uint16_t hue, uint8_t saturation, uint8_t brightness) {
     if (!leds_snapshot_held) {
-        // With a direction of 0 these return the current colour and effect unchanged.
+        // With a direction of 0 this returns the current effect unchanged.
         leds_snapshot = (struct leds_snapshot){
-            .color = zmk_rgb_underglow_calc_hue(0),
+            .color = mp_leds_color(),
             .effect = zmk_rgb_underglow_calc_effect(0),
         };
         leds_snapshot_held = true;
@@ -257,8 +260,8 @@ static void leds_apply(uint16_t hue, uint8_t saturation, uint8_t brightness) {
     }
 
     // Only the colour changes. LEDs that are off, by hand or for idle, stay off and wake in
-    // this colour, and set_hsb() itself saves nothing.
-    int err = zmk_rgb_underglow_set_hsb((struct zmk_led_hsb){
+    // this colour, and setting it saves nothing.
+    int err = mp_leds_set_color((struct zmk_led_hsb){
         .h = hue,
         .s = saturation,
         .b = brightness,
@@ -278,7 +281,7 @@ static void leds_restore(void) {
         return;
     }
 
-    zmk_rgb_underglow_set_hsb(leds_snapshot.color);
+    mp_leds_set_color(leds_snapshot.color);
     // Selecting the effect also schedules ZMK's own save of the underglow state, which holds
     // the pad's colour again by the time it runs.
     zmk_rgb_underglow_select_effect(leds_snapshot.effect);
@@ -390,6 +393,8 @@ void mp_host_host_arrived(const struct mp_host_transport *transport) {
     LOG_DBG("A host is listening over %s", transport->name);
     request_state(true);
 }
+
+void mp_host_leds_changed(void) { request_state(false); }
 
 #if IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW) && IS_ENABLED(CONFIG_SETTINGS)
 
@@ -714,7 +719,8 @@ static int host_event_listener(const zmk_event_t *eh) {
         return ZMK_EV_EVENT_BUBBLE;
     }
 
-    // A layer change, or an activity change, since going idle switches the underglow off.
+    // A layer change, or an activity change, since waking switches the underglow back on. The
+    // idle fade reports switching off itself, through mp_host_leds_changed().
     request_state(false);
     return ZMK_EV_EVENT_BUBBLE;
 }

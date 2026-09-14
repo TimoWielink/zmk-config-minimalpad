@@ -1,4 +1,4 @@
-# Minimalpad host module
+# Minimalpad firmware additions: the host module and the underglow's idle fade
 # SPDX-License-Identifier: MIT
 
 menuconfig MINIMALPAD_HOST
@@ -56,3 +56,33 @@ module-str = Minimalpad host module
 source "subsys/logging/Kconfig.template.log_config"
 
 endif # MINIMALPAD_HOST
+
+menuconfig MINIMALPAD_LEDS_IDLE_FADE
+    bool "Fade the underglow out when the pad goes idle"
+    depends on ZMK_RGB_UNDERGLOW && !ZMK_RGB_UNDERGLOW_AUTO_OFF_IDLE
+    default y
+    help
+      Takes the place of ZMK_RGB_UNDERGLOW_AUTO_OFF_IDLE, which switches the
+      underglow off the moment the pad goes idle. This dims it slowly first,
+      then switches it off the same way, cutting the LEDs' power. A key or the
+      dial brings it straight back. When the pad restarts while the underglow
+      is off for idle, after deep sleep, a reset or a flat battery, the
+      underglow comes back on, where ZMK's option leaves it off.
+
+if MINIMALPAD_LEDS_IDLE_FADE
+
+config MINIMALPAD_LEDS_IDLE_FADE_MS
+    int "How long the fade takes, in milliseconds"
+    range 0 30000
+    default 8000
+    help
+      The fade starts when the pad goes idle, ZMK_IDLE_TIMEOUT after the last
+      key press or dial turn. 0 switches the underglow off at once, as ZMK's
+      own option does. The breathe effect sets its own brightness, so it does
+      not dim and simply stops at the end.
+
+module = MINIMALPAD_LEDS
+module-str = Minimalpad LEDs
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MINIMALPAD_LEDS_IDLE_FADE
