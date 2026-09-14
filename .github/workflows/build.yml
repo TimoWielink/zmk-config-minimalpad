@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - '*'
+    # A release: a tag named after VERSION, such as v1.4.2. Tag pushes build whatever
+    # the paths below say.
+    tags:
+      - 'v*'
     paths:
       - 'config/**'
       - '.github/workflows/**'
@@ -13,6 +17,7 @@ on:
       - 'zephyr/**'
       - 'CMakeLists.txt'
       - 'Kconfig'
+      - 'VERSION'
       - 'build.yaml'
   pull_request:
     branches:
@@ -26,9 +31,51 @@ on:
       - 'zephyr/**'
       - 'CMakeLists.txt'
       - 'Kconfig'
+      - 'VERSION'
       - 'build.yaml'
   workflow_dispatch:
 
 jobs:
+  version:
+    name: Read the version
+    runs-on: ubuntu-latest
+    outputs:
+      archive_name: ${{ steps.name.outputs.archive_name }}
+    steps:
+      - name: Checkout VERSION
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: VERSION
+          sparse-checkout-cone-mode: false
+
+      - name: Name the firmware after the version
+        id: name
+        shell: bash
+        env:
+          COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          if [[ ! "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error file=VERSION::VERSION must be MAJOR.MINOR.PATCH, such as 1.4.2, not '$version'."
+            exit 1
+          fi
+
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            if [[ "$GITHUB_REF_NAME" != "v$version" ]]; then
+              echo "::error file=VERSION::The tag $GITHUB_REF_NAME does not match VERSION, $version. Tag the commit v$version, or change VERSION first."
+              exit 1
+            fi
+            archive_name="minimalpad-v$version"
+          else
+            # Not a release, so the commit tells apart builds of the same version.
+            archive_name="minimalpad-v$version+${COMMIT::7}"
+          fi
+
+          echo "archive_name=$archive_name" >> "$GITHUB_OUTPUT"
+          echo "Firmware: \`$archive_name\`" >> "$GITHUB_STEP_SUMMARY"
+
   build:
+    needs: version
     uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
+    with:
+      archive_name: ${{ needs.version.outputs.archive_name }}

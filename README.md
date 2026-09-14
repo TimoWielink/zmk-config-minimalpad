@@ -118,6 +118,30 @@ Good to know:
 - If the pad restarts while its lights are off for idle, for example waking from sleep, a reset or a flat battery, the lights come back on. Earlier firmware left them off. So after you flash this version for the first time, the lights may stay dark. Switch them on once: hold the bottom-right key and press the third key on the bottom row (LED on/off).
 - The fade is in `src/leds/idle_fade.c`. It takes the place of ZMK's `CONFIG_ZMK_RGB_UNDERGLOW_AUTO_OFF_IDLE`, which switches the lights off at once.
 
+## Versions
+
+The firmware uses [semantic versioning](https://semver.org). Its version, such as `0.2.0`, is in the `VERSION` file at the root of this repo, the only place to change it. The firmware reports it to Minimalpad Studio, and each build on GitHub Actions is named after it:
+
+| Build | Artifact to download |
+| --- | --- |
+| A push to a branch | `minimalpad-v0.2.0+18a503a`: the version, then the commit it was built from |
+| A release tag | `minimalpad-v0.2.0` |
+
+After a release, raise the version in the first commit that changes the firmware. Pick the part by the biggest change until the next release:
+
+- **Patch** (`0.2.0` to `0.2.1`): fixes only.
+- **Minor** (`0.2.1` to `0.3.0`): something new that works with your setup as it is, such as the idle fade.
+- **Major** (`0.3.0` to `1.0.0`): a change that needs something redone, such as a new layer layout, pairing again, or updating Minimalpad Studio to reach the pad.
+
+To release, tag the commit whose `VERSION` has that version, and push the tag:
+
+```sh
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+The build fails if the tag and `VERSION` disagree. What each version changed is in [CHANGELOG.md](CHANGELOG.md).
+
 ## Additional Resources
 - [ZMK Documentation](https://zmk.dev/docs/)
 - [ZMK Keymap Guide](https://zmk.dev/docs/features/keymaps)

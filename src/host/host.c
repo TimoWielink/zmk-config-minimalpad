@@ -54,6 +54,7 @@
 #endif
 
 #include <minimalpad/host.h>
+#include <minimalpad/version.h>
 
 LOG_MODULE_REGISTER(minimalpad_host, CONFIG_MINIMALPAD_HOST_LOG_LEVEL);
 
@@ -516,9 +517,9 @@ void mp_host_handle_hello(const struct mp_host_transport *from, const uint8_t *p
 
     const struct mp_hello_ack ack = {
         .protocol = MP_HOST_PROTOCOL_VERSION,
-        .fw_major = CONFIG_MINIMALPAD_HOST_FW_VERSION_MAJOR,
-        .fw_minor = CONFIG_MINIMALPAD_HOST_FW_VERSION_MINOR,
-        .fw_patch = CONFIG_MINIMALPAD_HOST_FW_VERSION_PATCH,
+        .fw_major = MINIMALPAD_VERSION_MAJOR,
+        .fw_minor = MINIMALPAD_VERSION_MINOR,
+        .fw_patch = MINIMALPAD_VERSION_PATCH,
         // Dial swap stays clear until the dial keycodes SET_PROFILE carries drive the dial.
         .caps = MP_CAP_PROFILES | (IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW) ? MP_CAP_LEDS : 0),
         .layer_count = ZMK_KEYMAP_LAYERS_LEN,
@@ -742,6 +743,9 @@ bool mp_host_dial_keycodes(uint32_t *clockwise, uint32_t *counter_clockwise) {
 }
 
 static int host_init(void) {
+    LOG_INF("Minimalpad firmware %d.%d.%d", MINIMALPAD_VERSION_MAJOR, MINIMALPAD_VERSION_MINOR,
+            MINIMALPAD_VERSION_PATCH);
+
     host_layer = zmk_keymap_layer_default();
     return 0;
 }

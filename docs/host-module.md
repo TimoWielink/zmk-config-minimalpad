@@ -64,8 +64,9 @@ Add any of these to `boards/shields/minimalpad/minimalpad.conf`:
 | `CONFIG_MINIMALPAD_HOST` | `y` | The module itself. Set `n` to build without it |
 | `CONFIG_MINIMALPAD_HOST_HEARTBEAT_DEFAULT_TIMEOUT` | `6` | Seconds before falling back, until Studio's first heartbeat sets its own |
 | `CONFIG_MINIMALPAD_HOST_LEDS_FORCE_SOLID` | `y` | Show profile colours with the solid effect, since animated effects ignore colour |
-| `CONFIG_MINIMALPAD_HOST_FW_VERSION_MAJOR`, `_MINOR`, `_PATCH` | `0.1.0` | The version Studio sees |
 | `CONFIG_MINIMALPAD_HOST_LOG_LEVEL_DBG` | off | Log what the module decides, with the `zmk-usb-logging` snippet |
+
+The firmware version Studio sees in `HELLO_ACK` is not a setting. It comes from the `VERSION` file, the same one the build is named after (README, "Versions").
 
 ## Size
 

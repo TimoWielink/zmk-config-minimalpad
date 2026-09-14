@@ -16,21 +16,6 @@ menuconfig MINIMALPAD_HOST
 
 if MINIMALPAD_HOST
 
-config MINIMALPAD_HOST_FW_VERSION_MAJOR
-    int "Firmware version reported in HELLO_ACK, major"
-    range 0 255
-    default 0
-
-config MINIMALPAD_HOST_FW_VERSION_MINOR
-    int "Firmware version reported in HELLO_ACK, minor"
-    range 0 255
-    default 1
-
-config MINIMALPAD_HOST_FW_VERSION_PATCH
-    int "Firmware version reported in HELLO_ACK, patch"
-    range 0 255
-    default 0
-
 config MINIMALPAD_HOST_HEARTBEAT_DEFAULT_TIMEOUT
     int "Fallback window, in seconds, before the host's first HEARTBEAT"
     range 1 255
