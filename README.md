@@ -91,6 +91,10 @@ Once you push your changes, GitHub Actions will automatically build your firmwar
 
 After flashing, test your keymap by pressing the configured keys. If something isn’t working as expected, modify your keymap, push changes, and re-flash the new firmware.
 
+## Minimalpad Studio support
+
+This firmware includes the **host module**, which lets Minimalpad Studio, the Mac app, switch the pad to an app's profile layer and set its colour while you work. Without Studio running, the pad behaves exactly as its keymap says, and it returns to its Default layer on its own when Studio goes away. It is on by default and does not change how you build or flash. What it does, its settings and how to turn it off are in [docs/host-module.md](docs/host-module.md).
+
 ## Additional Resources
 - [ZMK Documentation](https://zmk.dev/docs/)
 - [ZMK Keymap Guide](https://zmk.dev/docs/features/keymaps)

@@ -85,6 +85,9 @@
             sensor-bindings = <&rgb_encoder>;
         };
 
+        // Reserved slots, where Minimalpad Studio adds profile layers with ZMK Studio's
+        // add_layer: 14 of them, for 16 layers with Media and BT + LED. Only builds with
+        // ZMK Studio compile them in; without it the keymap is the two layers above.
         extra_1 {
             status = "reserved";
         };
@@ -94,6 +97,50 @@
         };
 
         extra_3 {
+            status = "reserved";
+        };
+
+        extra_4 {
+            status = "reserved";
+        };
+
+        extra_5 {
+            status = "reserved";
+        };
+
+        extra_6 {
+            status = "reserved";
+        };
+
+        extra_7 {
+            status = "reserved";
+        };
+
+        extra_8 {
+            status = "reserved";
+        };
+
+        extra_9 {
+            status = "reserved";
+        };
+
+        extra_10 {
+            status = "reserved";
+        };
+
+        extra_11 {
+            status = "reserved";
+        };
+
+        extra_12 {
+            status = "reserved";
+        };
+
+        extra_13 {
+            status = "reserved";
+        };
+
+        extra_14 {
             status = "reserved";
         };
     };

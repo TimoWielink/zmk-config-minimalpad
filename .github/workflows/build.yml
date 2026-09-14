@@ -8,6 +8,12 @@ on:
       - 'config/**'
       - '.github/workflows/**'
       - 'boards/**'
+      - 'include/**'
+      - 'src/**'
+      - 'zephyr/**'
+      - 'CMakeLists.txt'
+      - 'Kconfig'
+      - 'build.yaml'
   pull_request:
     branches:
       - '*'
@@ -15,6 +21,12 @@ on:
       - 'config/**'
       - '.github/workflows/**'
       - 'boards/**'
+      - 'include/**'
+      - 'src/**'
+      - 'zephyr/**'
+      - 'CMakeLists.txt'
+      - 'Kconfig'
+      - 'build.yaml'
   workflow_dispatch:
 
 jobs:

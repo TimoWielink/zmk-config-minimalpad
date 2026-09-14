@@ -1,0 +1,58 @@
+# Minimalpad host module
+# SPDX-License-Identifier: MIT
+
+menuconfig MINIMALPAD_HOST
+    bool "Minimalpad host module"
+    depends on ZMK_BLE
+    default y
+    help
+      The device channel Minimalpad Studio uses for what ZMK Studio RPC cannot
+      do: switching the pad to a profile layer, setting the underglow colour,
+      and the heartbeat that returns the pad to Default when Studio goes away.
+      It runs over its own GATT service. The wire format is
+      docs/protocol/host-protocol.md in minimalpad-studio-mac, and
+      include/minimalpad/mp_host_protocol.h here is a verbatim copy of its
+      C header.
+
+if MINIMALPAD_HOST
+
+config MINIMALPAD_HOST_FW_VERSION_MAJOR
+    int "Firmware version reported in HELLO_ACK, major"
+    range 0 255
+    default 0
+
+config MINIMALPAD_HOST_FW_VERSION_MINOR
+    int "Firmware version reported in HELLO_ACK, minor"
+    range 0 255
+    default 1
+
+config MINIMALPAD_HOST_FW_VERSION_PATCH
+    int "Firmware version reported in HELLO_ACK, patch"
+    range 0 255
+    default 0
+
+config MINIMALPAD_HOST_HEARTBEAT_DEFAULT_TIMEOUT
+    int "Fallback window, in seconds, before the host's first HEARTBEAT"
+    range 1 255
+    default 6
+    help
+      host-protocol.md has Studio send HEARTBEAT every 2 seconds with a 6
+      second window, and each HEARTBEAT sets the window from then on. Until
+      the first one arrives, SET_PROFILE and SET_LEDS arm the fallback with
+      this window, so a host that stops between switching and its first
+      heartbeat still cannot leave the pad on a profile (ADR 0005).
+
+config MINIMALPAD_HOST_LEDS_FORCE_SOLID
+    bool "Show a host colour with the solid effect"
+    depends on ZMK_RGB_UNDERGLOW
+    default y
+    help
+      The spectrum and swirl effects ignore the colour, so a profile colour
+      would not show while one of them runs. The effect that was in use
+      before the host set a colour comes back on fallback.
+
+module = MINIMALPAD_HOST
+module-str = Minimalpad host module
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MINIMALPAD_HOST
