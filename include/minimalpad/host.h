@@ -22,10 +22,8 @@
 #include <minimalpad/mp_host_protocol.h>
 
 /*
- * One way to reach a host. Bluetooth (transport_gatt.c) is the only one in V1.
- * The USB channel, a vendor HID interface or a second CDC-ACM port decided in
- * D0, becomes a second instance and the transports list in host.c; frame.c and
- * the command handlers do not change.
+ * One way to reach a host. Bluetooth has its GATT adapter and USB has a
+ * combined CDC-ACM adapter; both use the same frame reader and command core.
  */
 struct mp_host_transport {
     const char *name;
@@ -46,6 +44,9 @@ struct mp_host_transport {
 };
 
 extern const struct mp_host_transport mp_host_transport_gatt;
+#if IS_ENABLED(CONFIG_MINIMALPAD_HOST_USB)
+extern const struct mp_host_transport mp_host_transport_usb;
+#endif
 
 /*
  * Turns one transport's bytes into frames and dispatches them.

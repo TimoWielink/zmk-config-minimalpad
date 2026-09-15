@@ -22,6 +22,7 @@
 #include <zephyr/logging/log.h>
 
 #include <zmk/ble.h>
+#include <zmk/endpoints.h>
 
 #include <minimalpad/host.h>
 
@@ -84,7 +85,8 @@ static K_WORK_DEFINE(read_writes_work, read_writes);
  * change nothing and any bonded host gets an answer.
  */
 static bool from_active_profile(struct bt_conn *conn) {
-    return bt_addr_le_cmp(bt_conn_get_dst(conn), zmk_ble_active_profile_addr()) == 0;
+    return zmk_endpoint_get_selected().transport == ZMK_TRANSPORT_BLE &&
+           bt_addr_le_cmp(bt_conn_get_dst(conn), zmk_ble_active_profile_addr()) == 0;
 }
 
 static ssize_t write_command(struct bt_conn *conn, const struct bt_gatt_attr *attr,

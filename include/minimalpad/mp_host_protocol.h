@@ -1,12 +1,12 @@
 /*
- * Minimalpad host protocol v1 (draft)
+ * Minimalpad host protocol v1
  *
  * The contract between Minimalpad Studio on the Mac and the host module in the
  * pad's firmware. The prose spec is host-protocol.md next to this file; this
  * header is the firmware-side copy of it, and the Swift side in
  * Core/HostLink mirrors the same layout.
  *
- * Copy this file into zmk-config-minimalpad when the host module is written.
+ * This file is mirrored in zmk-config-minimalpad for the firmware build.
  * Keep the three copies in step: a change here is a change to the wire format.
  *
  * SPDX-License-Identifier: MIT

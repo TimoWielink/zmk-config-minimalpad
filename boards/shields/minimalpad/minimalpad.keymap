@@ -71,7 +71,7 @@
         // ╠══════════╩══════════╩══════════╩══════════╣
         // ║        (encoder btn — release to exit)     ║
         // ╚════════════════════════════════════════════╝
-        //   Active while the encoder button is held (from the Media layer).
+        //   Active while the bottom-right key is held (from the Media layer).
         //   Encoder rotation here: LED Brightness Up / Down.
         btled_layer {
             display-name = "BT + LED";

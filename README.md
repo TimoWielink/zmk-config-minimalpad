@@ -99,6 +99,25 @@ This firmware includes the **host module**, which lets Minimalpad Studio, the Ma
 
 When you leave the pad alone, its lights go out but it stays connected.
 
+### On-pad lighting controls
+
+Hold the bottom-right key to open BT + LED, then use these controls while holding it:
+
+| Input | Lighting action |
+| --- | --- |
+| Third row, keys 1 and 2 | Brightness up / down |
+| Third row, keys 3 and 4 | Animation speed up / down |
+| Bottom row, key 1 | Hue up |
+| Bottom row, key 2 | Next effect: Solid, Breathe, Spectrum or Swirl |
+| Bottom row, key 3 | Lights on / off |
+| Turn the dial | Brightness up / down |
+
+These are the pad's normal ZMK lighting settings and are saved after ZMK's flash debounce. Speed does nothing visibly in Solid; it applies when an animated effect runs. Breathe keeps hue and saturation but generates brightness, while Spectrum and Swirl generate hue.
+
+Minimalpad Studio's Profile colour is separate. Over the same USB or Bluetooth connection it uses to edit the pad, Studio temporarily applies one global HSB and forces Solid so the selected colour is exact. Pressing Effect on the pad can still change that live look until Studio sends another Profile colour. When the Profile ends, the pad restores the colour and effect it had before; Speed and on/off remain your choices. Studio cannot currently set pixels individually or save an effect per Profile.
+
+### Idle and battery
+
 - **Idle.** 30 seconds after your last key press or dial turn, the underglow fades out over 8 seconds, then switches off and cuts power to the LEDs. Press a key or turn the dial to bring it straight back. That press also works as normal.
 - **Sleep.** On battery, the pad deep-sleeps after 12 hours without a key press or dial turn, for example overnight. Bluetooth disconnects while it sleeps. The key press that wakes it is used up waking it, and it reconnects within a few seconds. On USB it never sleeps.
 - **Battery.** The LEDs are what drain the battery. By ZMK's own estimates, a nice!nano v2 with its LEDs off draws about 40 µA while connected and about 20 µA asleep, while 16 lit LEDs can draw over 100 mA at full brightness. Staying connected with the lights off costs very little.
@@ -120,12 +139,12 @@ Good to know:
 
 ## Versions
 
-The firmware uses [semantic versioning](https://semver.org). Its version, such as `0.2.0`, is in the `VERSION` file at the root of this repo, the only place to change it. The firmware reports it to Minimalpad Studio, and each build on GitHub Actions is named after it:
+The firmware uses [semantic versioning](https://semver.org). Its version, such as `0.3.0`, is in the `VERSION` file at the root of this repo, the only place to change it. The firmware reports it to Minimalpad Studio, and each build on GitHub Actions is named after it:
 
 | Build | Artifact to download |
 | --- | --- |
-| A push to a branch | `minimalpad-v0.2.0+18a503a`: the version, then the commit it was built from |
-| A release tag | `minimalpad-v0.2.0`, and a GitHub Release with the `.uf2` files |
+| A push to a branch | `minimalpad-v0.3.0+abcdef0`: the version, then the commit it was built from |
+| A release tag | `minimalpad-v0.3.0`, and a GitHub Release with the `.uf2` files |
 
 After a release, raise the version in the first commit that changes the firmware. Pick the part by the biggest change until the next release:
 

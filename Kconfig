@@ -9,12 +9,38 @@ menuconfig MINIMALPAD_HOST
       The device channel Minimalpad Studio uses for what ZMK Studio RPC cannot
       do: switching the pad to a profile layer, setting the underglow colour,
       and the heartbeat that returns the pad to Default when Studio goes away.
-      It runs over its own GATT service. The wire format is
+      It runs over its own GATT service on Bluetooth and shares ZMK Studio's
+      CDC-ACM stream on USB. The wire format is
       docs/protocol/host-protocol.md in minimalpad-studio-mac, and
       include/minimalpad/mp_host_protocol.h here is a verbatim copy of its
       C header.
 
 if MINIMALPAD_HOST
+
+DT_CHOSEN_ZMK_STUDIO_RPC_UART := zmk,studio-rpc-uart
+
+config MINIMALPAD_HOST_USB
+    bool "Carry the host protocol beside ZMK Studio on USB"
+    depends on ZMK_STUDIO_RPC
+    select SERIAL
+    select RING_BUFFER
+    default y if $(dt_chosen_enabled,$(DT_CHOSEN_ZMK_STUDIO_RPC_UART))
+    help
+      Multiplexes host-protocol frames and ZMK Studio RPC frames on the one
+      CDC-ACM port selected by the studio-rpc-usb-uart snippet. Using one port
+      makes the identity Studio verifies and every Profile write belong to the
+      same physical pad. Disable ZMK's stock UART Studio transport when this is
+      enabled; this module replaces it with the combined transport.
+
+config MINIMALPAD_HOST_USB_TX_BUFFER_SIZE
+    int "Combined USB transmit buffer size"
+    depends on MINIMALPAD_HOST_USB
+    range 128 2048
+    default 512
+    help
+      Holds complete host frames and chunks of a Studio RPC response while the
+      CDC-ACM endpoint drains. Producers wait briefly rather than dropping a
+      frame when this buffer fills.
 
 config MINIMALPAD_HOST_HEARTBEAT_DEFAULT_TIMEOUT
     int "Fallback window, in seconds, before the host's first HEARTBEAT"
@@ -32,9 +58,10 @@ config MINIMALPAD_HOST_LEDS_FORCE_SOLID
     depends on ZMK_RGB_UNDERGLOW
     default y
     help
-      The spectrum and swirl effects ignore the colour, so a profile colour
-      would not show while one of them runs. The effect that was in use
-      before the host set a colour comes back on fallback.
+      Solid is the only effect that reproduces a requested HSB exactly:
+      breathe generates its own brightness, while spectrum and swirl
+      generate hue. The effect that was in use before the host set a colour
+      comes back on fallback.
 
 module = MINIMALPAD_HOST
 module-str = Minimalpad host module

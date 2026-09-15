@@ -2,6 +2,12 @@
 
 What changed in each version of the Minimalpad firmware. How versions are numbered and released is in the README, under "Versions". A version's section here becomes the description of its GitHub Release, so write it for the people who will flash it.
 
+## 0.3.0
+
+- Profiles and their LED colours now switch over USB as well as Bluetooth.
+- ZMK Studio editing and MinimalPad Profile control share one verified USB connection, so Studio cannot write a layout to one pad while controlling another.
+- USB remains automatic: there is one serial device and no port picker.
+
 ## 0.2.0
 
 - The underglow fades out over 8 seconds when the pad goes idle, instead of switching off at once.

@@ -42,6 +42,9 @@ if(CONFIG_MINIMALPAD_HOST)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/host/host.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/host/transport_gatt.c
   )
+  target_sources_ifdef(CONFIG_MINIMALPAD_HOST_USB app PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/host/transport_usb.c
+  )
 endif()
 
 if(CONFIG_MINIMALPAD_LEDS_IDLE_FADE)

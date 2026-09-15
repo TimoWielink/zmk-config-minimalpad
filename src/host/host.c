@@ -73,6 +73,9 @@ BUILD_ASSERT(sizeof(struct mp_rejected_event) == 2, "REJECTED carries 2 payload 
 /* Every way a host can reach the pad. The USB channel joins this list. */
 static const struct mp_host_transport *const transports[] = {
     &mp_host_transport_gatt,
+#if IS_ENABLED(CONFIG_MINIMALPAD_HOST_USB)
+    &mp_host_transport_usb,
+#endif
 };
 
 /* The layer the host last set: STATE's layer_id, the profile. */
@@ -528,9 +531,10 @@ void mp_host_handle_hello(const struct mp_host_transport *from, const uint8_t *p
 
     reply(from, MP_EVT_HELLO_ACK, &ack, sizeof(ack));
 
-    // A transport with no subscribe step, USB, also owes the host a STATE after its first
-    // HELLO (host-protocol.md, "State"). Bluetooth volunteers it on subscribe instead, through
-    // mp_host_host_arrived().
+    // USB has no subscribe step, so HELLO is when that host arrives. Bluetooth
+    // already volunteered STATE on subscribe; forcing a current one here is
+    // harmless and makes both transports follow one handshake rule.
+    mp_host_host_arrived(from);
 }
 
 void mp_host_handle_set_profile(const struct mp_host_transport *from, const uint8_t *payload) {
