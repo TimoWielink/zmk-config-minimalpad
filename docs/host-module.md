@@ -32,7 +32,7 @@ Without Studio running, nothing changes: the pad behaves exactly as its keymap s
 | `boards/shields/minimalpad/minimalpad.keymap` | 14 reserved layer slots instead of 3, so there is room for profiles |
 | `.github/workflows/build.yml` | Builds also run when only module code changes |
 
-The reserved slots only exist in the `minimalpad_with_studio` build, which has 16 layers: Media, BT + LED and 14 free for profiles. The plain `minimalpad` build keeps its two layers, so it carries the module but has no room for profiles.
+The firmware, `minimalpad_with_studio`, has 16 layers: Media, BT + LED and 14 free for profiles. The reserved slots are only compiled into builds with ZMK Studio, and since 0.3.0 that is the only build.
 
 ## How it works
 
@@ -108,7 +108,7 @@ Flash a spare pad first, since the Studio build changes the layer count. The che
 
 ## Building locally
 
-Optional: GitHub Actions is the normal build. To compile the same targets on a Mac with Docker (OrbStack or Docker Desktop):
+Optional: GitHub Actions is the normal build. To compile the same firmware on a Mac with Docker (OrbStack or Docker Desktop):
 
 ```sh
 REPO="$PWD"
@@ -127,11 +127,10 @@ build() {
     west build -s zmk/app -d "build/$NAME" -b "nice_nano//zmk" -S "$SNIPPET" -- \
       -DZMK_CONFIG=/tmp/zmk-config/config -DSHIELD=minimalpad -DZMK_EXTRA_MODULES=/zmk-config-repo $EXTRA'
 }
-build minimalpad "nrf52840-nosd" ""
 build minimalpad_with_studio "studio-rpc-usb-uart nrf52840-nosd" "-DCONFIG_ZMK_STUDIO=y"
 ```
 
-The `.uf2` files end up in the volume at `build/<name>/zephyr/zmk.uf2`. `config/west.yml` pins the ZMK revision used by the combined USB transport, and `.github/workflows/build.yml` builds with ZMK's workflow from the same commit. Change the two pins together, deliberately, and rebuild both targets when adopting a newer ZMK revision.
+The `.uf2` file ends up in the volume at `build/minimalpad_with_studio/zephyr/zmk.uf2`. `config/west.yml` pins the ZMK revision used by the combined USB transport, and `.github/workflows/build.yml` builds with ZMK's workflow from the same commit. Change the two pins together, deliberately, and rebuild when adopting a newer ZMK revision.
 
 ## Changing the protocol
 

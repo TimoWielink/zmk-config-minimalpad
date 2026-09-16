@@ -9,6 +9,9 @@ The first published release. It also includes 0.1.0 and 0.2.0, which were not re
 - Profiles and their LED colours now switch over USB as well as Bluetooth.
 - Over USB, ZMK Studio editing and profile control share one verified connection, so Studio for Mac cannot write a layout to one pad while it controls another.
 - USB stays automatic: the pad is still one serial device, so there is no port to pick.
+- There is one firmware file, `minimalpad_with_studio`, with ZMK Studio built in. The build without ZMK Studio is no longer made.
+
+If the lights stay off after you flash it, switch them on once: hold the bottom-right key and press the third key on the bottom row.
 
 ## 0.2.0
 
