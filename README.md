@@ -1,125 +1,113 @@
-![Imgur](https://i.imgur.com/PcZ9SqD.png)
+![MinimalPad Firmware](https://i.imgur.com/PcZ9SqD.png)
 
+# MinimalPad firmware
 
-# Customizing Your Keymap for MinimalPad (ZMK)
+ZMK firmware for the MinimalPad macropad: 16 keys, a push-button dial and RGB underglow, on a nice!nano v2 or a compatible clone, over USB or Bluetooth.
 
-This guide will help you customize the keymap for your **MinimalPad**, a 4x4 macropad built as a shield for ZMK. By following these steps, you can create your own keymap and flash it onto your device.
+**Firmware version: 0.3.0.** What changed in each version is in [CHANGELOG.md](CHANGELOG.md).
 
-## About MinimalPad
-MinimalPad is a compact, customizable macropad designed to be used either wired or wirelessly. It is compatible with ZMK firmware and works seamlessly with microcontrollers such as the **NiceNano V2 clone**, which enables Bluetooth functionality. This allows users to configure and use the macropad in various setups, whether as a USB-powered device or as a fully wireless peripheral. 
+- **Website:** [minimalmacropad.com](https://minimalmacropad.com)
+- **MinimalPad Studio, web version:** [studio.minimalmacropad.com](https://studio.minimalmacropad.com), in Chrome or Edge
+- **MinimalPad Studio for Mac:** coming soon. The download link will be added here.
+- **Docs:** [docs.minimalmacropad.com](https://docs.minimalmacropad.com), which are being updated
 
-## Prerequisites
-- A GitHub account
-- Basic knowledge of Git and YAML
-- A MinimalPad with a compatible microcontroller (e.g., NiceNano V2 clone)
+You don't need to build anything to change what a key does: open MinimalPad Studio and connect your pad. Build this firmware yourself to change what Studio can't, such as what turning the dial does, or when the lights go out and the pad sleeps.
 
-## 1. Fork the Repository
+## Which file to flash
 
-To customize your keymap, first fork the official MinimalPad configuration repository:
+Every build makes two files:
 
-[MinimalPad ZMK Config Repository](https://github.com/TimoWielink/zmk-config-minimalpad)
+| File | Flash it to |
+| --- | --- |
+| `minimalpad_with_studio` | Change your keys with MinimalPad Studio, on the web or on Mac. Profiles in Studio for Mac need it too. |
+| `minimalpad` | Keep the keys set in the keymap, without ZMK Studio |
 
-Click the **Fork** button in the top right corner to create your own copy of the repository.
+On GitHub Actions, a build is one download, such as `minimalpad-v0.3.0+abcdef0`: a zip that holds `minimalpad_with_studio.uf2` and `minimalpad.uf2`. A GitHub Release holds the same files named with their version, such as `minimalpad_with_studio-v0.3.0.uf2`. Until the first release is published, download a build from Actions.
 
-## 2. Clone Your Fork
+## Flash the firmware
 
-Once you've forked the repository, clone it to your local machine:
+1. Download a build. In the **Actions** tab of this repo, or of your fork, open the latest run with a green tick and download the file under **Artifacts**. Unzip it.
+2. Connect the MinimalPad to your computer with a USB cable that carries data. A charge-only cable won't work.
+3. Press the pad's reset button twice, quickly. A drive called NICENANO appears.
+4. Copy the `.uf2` file onto that drive. The pad restarts with the new firmware.
 
-```sh
-# Replace "your-username" with your GitHub username
-git clone https://github.com/your-username/zmk-config-minimalpad.git
-cd zmk-config-minimalpad
-```
+If the drive doesn't appear, try another cable or USB port, or press reset a little faster or slower.
 
-## 3. Modify Your Keymap
+## Build your own keymap
 
-The keymap is defined in the following file:
+1. **Fork this repo.** Click **Fork** at the top of [its GitHub page](https://github.com/TimoWielink/zmk-config-minimalpad).
+2. **Turn on Actions in your fork.** Open your fork's **Actions** tab and enable its workflows. GitHub keeps them off in a new fork.
+3. **Edit** `boards/shields/minimalpad/minimalpad.keymap`, in GitHub's web editor or in a clone of your fork:
 
-```plaintext
-boards/shields/minimalpad/minimalpad.keymap
-```
+   ```sh
+   # Replace YOUR-USERNAME with your GitHub username
+   git clone https://github.com/YOUR-USERNAME/zmk-config-minimalpad.git
+   cd zmk-config-minimalpad
+   ```
 
-### Understanding the Keymap Structure
+4. **Commit and push.** A push that changes the firmware starts a build; one that only changes the README or docs doesn't. To start a build yourself, open **Actions**, pick **Build ZMK firmware** and click **Run workflow**.
+5. **Flash** the build, as above.
 
-The keymap file is written in Devicetree format and consists of multiple layers. Here’s an example of a single row:
+To build on your Mac instead, see [Building locally](docs/host-module.md#building-locally).
 
-```c
-        default_layer {
-            bindings = <
-                &kp N7    &kp N8    &kp N9    &kp BSPC
-            >;
-        };
-```
+### The keymap
 
-Each key is defined using `&kp` (key press) followed by the desired keycode. For example, to change `N7` to `A`:
-
-```c
-&kp A
-```
-
-### Adding a Shortcut
-To define a shortcut, use key combinations. For example, to add **Ctrl + C** (copy) to a key:
+The keymap has two layers. Each lists 17 bindings: the 16 keys, row by row from the top left, then the dial's button. `sensor-bindings` sets what turning the dial does. This is the first layer:
 
 ```c
-&mt LCTRL C
+media_layer {
+    display-name = "Media";
+    bindings = <
+        &kp C_PREV      &kp C_PP        &kp C_NEXT      &kp C_MUTE
+        &kp C_VOL_DN    &kp C_VOL_UP    &kp C_STOP      &kp C_EJECT
+        &kp C_RW        &kp C_FF        &kp C_BRI_DN    &kp C_BRI_UP
+        &kp C_VOL_DN    &kp C_VOL_UP    &kp C_PP        &mo BTLED
+        &kp C_PP
+    >;
+    sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
+};
 ```
 
-You can refer to the [ZMK Keycode Documentation](https://zmk.dev/docs/features/keymaps) to find available keycodes.
+**Media.** Turning the dial changes the volume, and pressing it plays or pauses.
 
-### Saving and Pushing Changes
-Once you've modified the keymap, save the file and push your changes:
+| | Key 1 | Key 2 | Key 3 | Key 4 |
+| --- | --- | --- | --- | --- |
+| **Row 1** | Previous track | Play/pause | Next track | Mute |
+| **Row 2** | Volume down | Volume up | Stop | Eject |
+| **Row 3** | Rewind | Fast-forward | Screen brightness down | Screen brightness up |
+| **Row 4** | Volume down | Volume up | Play/pause | Hold for BT + LED |
 
-```sh
-git add boards/shields/minimalpad/minimalpad.keymap
-git commit -m "Updated keymap"
-git push origin main
-```
+**BT + LED**, while you hold the bottom-right key (`&mo BTLED`). Turning the dial changes the lights' brightness.
 
-## 4. Build Firmware Using GitHub Actions
+| | Key 1 | Key 2 | Key 3 | Key 4 |
+| --- | --- | --- | --- | --- |
+| **Row 1** | Bluetooth slot 1 | Bluetooth slot 2 | Bluetooth slot 3 | Bluetooth slot 4 |
+| **Row 2** | Bluetooth slot 5 | Next slot | Previous slot | Switch between USB and Bluetooth |
+| **Row 3** | Lights brighter | Lights dimmer | Animation faster | Animation slower |
+| **Row 4** | Hue up | Next effect: Solid, Breathe, Spectrum or Swirl | Lights on/off | Held |
 
-Once you push your changes, GitHub Actions will automatically build your firmware. You can find the compiled `.uf2` file in the **Actions** tab of your forked repository. Download the latest build artifact.
+To change a key, replace its binding. `&kp` sends a key: `&kp A` types A, `&kp LC(C)` sends Ctrl+C and `&kp LG(C)` sends Cmd+C on a Mac. The keycodes are in ZMK's [list of keycodes](https://zmk.dev/docs/keymaps/list-of-keycodes), and everything else a binding can do is in its [keymap docs](https://zmk.dev/docs/keymaps).
 
-## 5. Flash the Firmware
+After the two layers come 14 empty ones, marked `status = "reserved"`. Only the `minimalpad_with_studio` build includes them, as room for profiles in MinimalPad Studio for Mac.
 
-1. Connect your MinimalPad to your PC via USB.
-2. Double-click the **reset** button on the PCB to enter **boot mode**.
-3. Your device should appear as a mass storage device.
-4. Drag and drop the `firmware.uf2` file onto the mounted drive.
-5. The device will reboot automatically with the new keymap.
+## MinimalPad Studio support
 
-## 6. Testing and Debugging
+The firmware includes the **host module**, which MinimalPad Studio for Mac uses to follow the app you're working in:
 
-After flashing, test your keymap by pressing the configured keys. If something isn’t working as expected, modify your keymap, push changes, and re-flash the new firmware.
+- **Profiles.** When you switch to an app that has a profile, such as Figma, Studio for Mac switches the pad to that app's layer.
+- **Colour.** A profile can light the pad in one colour while it's active.
+- **Safety net.** Studio for Mac sends a heartbeat every 2 seconds. If it stops, because Studio quits, the Mac sleeps or the pad goes out of range, the pad returns to its Default layer (the first one in the keymap) and its own colours within 6 seconds.
 
-## Minimalpad Studio support
-
-This firmware includes the **host module**, which lets Minimalpad Studio, the Mac app, switch the pad to an app's profile layer and set its colour while you work. Without Studio running, the pad behaves exactly as its keymap says, and it returns to its Default layer on its own when Studio goes away. It is on by default and does not change how you build or flash. What it does, its settings and how to turn it off are in [docs/host-module.md](docs/host-module.md).
+This works over USB and Bluetooth. Without Studio for Mac running, the pad does exactly what its keymap says. Profiles need the `minimalpad_with_studio` build: the plain `minimalpad` build carries the module but has no room for them. The module is on by default and doesn't change how you build or flash. How it works, its settings and how to turn it off are in [docs/host-module.md](docs/host-module.md).
 
 ## Lighting, idle and battery
 
-When you leave the pad alone, its lights go out but it stays connected.
+The lighting keys are on the BT + LED layer, in the table above. The pad saves what you set a moment after you change it. Speed only shows in the animated effects: Breathe keeps the hue and changes the brightness, while Spectrum and Swirl change the hue.
 
-### On-pad lighting controls
+A profile's colour in Studio for Mac is separate and temporary. While it shows, the pad uses Solid, and when the profile ends, the pad goes back to its own colour and effect. The details are in [Lighting ownership](docs/host-module.md#lighting-ownership).
 
-Hold the bottom-right key to open BT + LED, then use these controls while holding it:
-
-| Input | Lighting action |
-| --- | --- |
-| Third row, keys 1 and 2 | Brightness up / down |
-| Third row, keys 3 and 4 | Animation speed up / down |
-| Bottom row, key 1 | Hue up |
-| Bottom row, key 2 | Next effect: Solid, Breathe, Spectrum or Swirl |
-| Bottom row, key 3 | Lights on / off |
-| Turn the dial | Brightness up / down |
-
-These are the pad's normal ZMK lighting settings and are saved after ZMK's flash debounce. Speed does nothing visibly in Solid; it applies when an animated effect runs. Breathe keeps hue and saturation but generates brightness, while Spectrum and Swirl generate hue.
-
-Minimalpad Studio's Profile colour is separate. Over the same USB or Bluetooth connection it uses to edit the pad, Studio temporarily applies one global HSB and forces Solid so the selected colour is exact. Pressing Effect on the pad can still change that live look until Studio sends another Profile colour. When the Profile ends, the pad restores the colour and effect it had before; Speed and on/off remain your choices. Studio cannot currently set pixels individually or save an effect per Profile.
-
-### Idle and battery
-
-- **Idle.** 30 seconds after your last key press or dial turn, the underglow fades out over 8 seconds, then switches off and cuts power to the LEDs. Press a key or turn the dial to bring it straight back. That press also works as normal.
-- **Sleep.** On battery, the pad deep-sleeps after 12 hours without a key press or dial turn, for example overnight. Bluetooth disconnects while it sleeps. The key press that wakes it is used up waking it, and it reconnects within a few seconds. On USB it never sleeps.
+- **Idle.** 30 seconds after your last key press or dial turn, the lights fade out over 8 seconds, then switch off and their power is cut. The pad stays connected. A key press or dial turn brings the lights straight back and still does its job.
+- **Sleep.** On battery, the pad deep-sleeps after 12 hours without a key press or dial turn, for example overnight. Bluetooth disconnects while it sleeps. The key press that wakes it only wakes it, and it reconnects within a few seconds. On USB it never sleeps.
 - **Battery.** The LEDs are what drain the battery. By ZMK's own estimates, a nice!nano v2 with its LEDs off draws about 40 µA while connected and about 20 µA asleep, while 16 lit LEDs can draw over 100 mA at full brightness. Staying connected with the lights off costs very little.
 
 To change this, edit `boards/shields/minimalpad/minimalpad.conf`:
@@ -133,42 +121,39 @@ To change this, edit `boards/shields/minimalpad/minimalpad.conf`:
 
 Good to know:
 
-- The breathe effect sets its own brightness, so it does not dim. It keeps pulsing until the fade time is up, then switches off.
-- If the pad restarts while its lights are off for idle, for example waking from sleep, a reset or a flat battery, the lights come back on. Earlier firmware left them off. So after you flash this version for the first time, the lights may stay dark. Switch them on once: hold the bottom-right key and press the third key on the bottom row (LED on/off).
+- Breathe sets its own brightness, so it doesn't dim. It keeps pulsing until the fade time is up, then switches off.
+- If the pad restarts while its lights are off for idle, for example waking from sleep, a reset or a flat battery, the lights come back on. Firmware before 0.2.0 left them off, so the first time you flash this version, the lights may stay dark. Switch them on once: hold the bottom-right key and press the third key on the bottom row.
 - The fade is in `src/leds/idle_fade.c`. It takes the place of ZMK's `CONFIG_ZMK_RGB_UNDERGLOW_AUTO_OFF_IDLE`, which switches the lights off at once.
 
 ## Versions
 
-The firmware uses [semantic versioning](https://semver.org). Its version, such as `0.3.0`, is in the `VERSION` file at the root of this repo, the only place to change it. The firmware reports it to Minimalpad Studio, and each build on GitHub Actions is named after it:
+The firmware uses [semantic versioning](https://semver.org). Its version, now `0.3.0`, is in the `VERSION` file at the root of this repo, the only place to change it. The firmware reports it to MinimalPad Studio for Mac, and each build on GitHub Actions is named after it:
 
-| Build | Artifact to download |
+| Build | What you download |
 | --- | --- |
 | A push to a branch | `minimalpad-v0.3.0+abcdef0`: the version, then the commit it was built from |
 | A release tag | `minimalpad-v0.3.0`, and a GitHub Release with the `.uf2` files |
 
-After a release, raise the version in the first commit that changes the firmware. Pick the part by the biggest change until the next release:
+After a release, raise the version in the first commit that changes the firmware. Changes to the README or docs don't count. Pick the part by the biggest change until the next release:
 
-- **Patch** (`0.2.0` to `0.2.1`): fixes only.
-- **Minor** (`0.2.1` to `0.3.0`): something new that works with your setup as it is, such as the idle fade.
-- **Major** (`0.3.0` to `1.0.0`): a change that needs something redone, such as a new layer layout, pairing again, or updating Minimalpad Studio to reach the pad.
+- **Patch** (`0.3.0` to `0.3.1`): fixes only.
+- **Minor** (`0.3.1` to `0.4.0`): something new that works with your setup as it is, such as the idle fade.
+- **Major** (`0.4.0` to `1.0.0`): a change that needs something redone, such as a new layer layout, pairing again, or updating MinimalPad Studio to reach the pad.
 
 To release a version:
 
-1. In [CHANGELOG.md](CHANGELOG.md), write what it changes under a heading with its number, such as `## 0.2.0`. This becomes the release's description, so write it for the people who will flash it.
+1. In [CHANGELOG.md](CHANGELOG.md), write what it changes under a heading with its number, such as `## 0.3.0`. This becomes the release's description, so write it for the people who will flash it.
 2. Tag the commit whose `VERSION` has that version, and push the tag:
 
    ```sh
-   git tag v0.2.0
-   git push origin v0.2.0
+   git tag v0.3.0
+   git push origin v0.3.0
    ```
 
-GitHub Actions builds the firmware and publishes a release called "Minimalpad firmware v0.2.0". It holds `minimalpad_with_studio-v0.2.0.uf2` and `minimalpad-v0.2.0.uf2`. Its description is your changelog section, followed by which file to flash and how ([.github/release-notes.md](.github/release-notes.md)). Before building, it stops if the tag and `VERSION` disagree or the changelog has nothing for that version. Then delete the tag with `git tag -d v0.2.0` and `git push origin :v0.2.0`, fix what the error says, and tag again.
+GitHub Actions builds the firmware and publishes a release called "MinimalPad firmware v0.3.0". It holds `minimalpad_with_studio-v0.3.0.uf2` and `minimalpad-v0.3.0.uf2`. Its description is your changelog section, followed by which file to flash and how ([.github/release-notes.md](.github/release-notes.md)). Before building, it stops if the tag and `VERSION` disagree or the changelog has nothing for that version. Then delete the tag with `git tag -d v0.3.0` and `git push origin :v0.3.0`, fix what the error says, and tag again.
 
-## Additional Resources
-- [ZMK Documentation](https://zmk.dev/docs/)
-- [ZMK Keymap Guide](https://zmk.dev/docs/features/keymaps)
-- [MinimalPad GitHub Repository](https://github.com/TimoWielink/zmk-config-minimalpad)
+## More
 
----
-
-By following this guide, you should be able to customize and flash your own keymap for the MinimalPad with ease. Happy hacking!
+- [MinimalPad docs](https://docs.minimalmacropad.com)
+- [ZMK documentation](https://zmk.dev/docs)
+- [ZMK keymaps](https://zmk.dev/docs/keymaps) and [list of keycodes](https://zmk.dev/docs/keymaps/list-of-keycodes)

@@ -1,6 +1,6 @@
-# Minimalpad host module
+# MinimalPad host module
 
-A small addition to the pad's firmware for Minimalpad Studio, the Mac app. The Bluetooth channel and Profile switching have run on a pad. Firmware 0.3.0 adds USB Profile control; that new route and Profile colour still need their physical-pad check after flashing.
+A small addition to the pad's firmware for MinimalPad Studio for Mac. The Bluetooth channel and Profile switching have run on a pad. Firmware 0.3.0 adds USB Profile control; that new route and Profile colour still need their physical-pad check after flashing.
 
 ## What it does
 
@@ -16,7 +16,7 @@ Without Studio running, nothing changes: the pad behaves exactly as its keymap s
 
 - You still build with GitHub Actions: push, then download the `.uf2` from the Actions tab.
 - You still flash the usual way: double-press reset, then copy the `.uf2` onto the drive that appears.
-- Keymap editing still goes through ZMK Studio, from Minimalpad Studio or Minimalpad Configurator.
+- Keymap editing still goes through ZMK Studio, from MinimalPad Studio on the web or on Mac.
 
 ## What changed in this repo
 
@@ -26,7 +26,7 @@ Without Studio running, nothing changes: the pad behaves exactly as its keymap s
 | `src/host/host.c` | What each command does: layers, LEDs, heartbeat and fallback, state reports |
 | `src/host/transport_gatt.c` | The Bluetooth GATT service the Mac talks to |
 | `src/host/transport_usb.c` | Shares ZMK Studio's one USB serial stream without adding another port |
-| `include/minimalpad/mp_host_protocol.h` | The wire format, copied byte for byte from Minimalpad Studio |
+| `include/minimalpad/mp_host_protocol.h` | The wire format, copied byte for byte from MinimalPad Studio for Mac |
 | `include/minimalpad/host.h` | How those three files fit together |
 | `Kconfig`, `CMakeLists.txt`, `zephyr/module.yml` | Make this repo a Zephyr module, so ZMK compiles the code |
 | `boards/shields/minimalpad/minimalpad.keymap` | 14 reserved layer slots instead of 3, so there is room for profiles |
@@ -72,9 +72,9 @@ The firmware therefore forces Solid when Studio applies a colour. The pad's own 
 
 Ordinary ZMK lighting changes made from keys are saved to the pad after the settings debounce. Profile colour is instead saved with the Profile on the Mac and applied temporarily. The host keeps a safety copy of the pad's HSB and effect in flash, so a restart during host control restores the pad's own lighting rather than making an app colour permanent.
 
-The complete control and interaction matrix, official ZMK source links and the Studio UI decision are in [`minimalpad-studio-mac/docs/research/profile-lighting.md`](../../minimalpad-studio-mac/docs/research/profile-lighting.md).
+The complete control and interaction matrix, official ZMK source links and the Studio UI decision are in the MinimalPad Studio for Mac repo, in `docs/research/profile-lighting.md`.
 
-The full specification lives in the Minimalpad Studio repo, in `docs/protocol/host-protocol.md`.
+The full specification lives in the MinimalPad Studio for Mac repo, in `docs/protocol/host-protocol.md`.
 
 ## Settings
 
@@ -104,7 +104,7 @@ That module was about 3.2 KB of flash and 0.7 KB of RAM. Firmware 0.3.0 also res
 
 ## Testing
 
-Flash a spare pad first, since the Studio build changes the layer count. The checklist is in the Minimalpad Studio repo, `.scratch/host-module/issues/01-test-on-a-pad.md`. Bluetooth Profile switching has passed. USB switching, USB fallback and the lighting cases remain to be run on hardware.
+Flash a spare pad first, since the Studio build changes the layer count. The checklist is in the MinimalPad Studio for Mac repo, `.scratch/host-module/issues/01-test-on-a-pad.md`. Bluetooth Profile switching has passed. USB switching, USB fallback and the lighting cases remain to be run on hardware.
 
 ## Building locally
 
@@ -135,4 +135,4 @@ The `.uf2` files end up in the volume at `build/<name>/zephyr/zmk.uf2`. `config/
 
 ## Changing the protocol
 
-`include/minimalpad/mp_host_protocol.h` is a copy. Change the Minimalpad Studio repo's `docs/protocol/mp_host_protocol.h` and its spec first, copy the header here unchanged, then update the Swift side (`Core/HostLink`) to match. The `BUILD_ASSERT` lines in `frame.c` and `host.c` fail the build if the structs drift from the sizes the spec names.
+`include/minimalpad/mp_host_protocol.h` is a copy. Change the MinimalPad Studio for Mac repo's `docs/protocol/mp_host_protocol.h` and its spec first, copy the header here unchanged, then update the Swift side (`Core/HostLink`) to match. The `BUILD_ASSERT` lines in `frame.c` and `host.c` fail the build if the structs drift from the sizes the spec names.

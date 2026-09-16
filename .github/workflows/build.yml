@@ -132,7 +132,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
         run: |
-          title="Minimalpad firmware v$VERSION"
+          title="MinimalPad firmware v$VERSION"
           if gh release view "$TAG" > /dev/null 2>&1; then
             # A re-run: bring the existing release in line with this build.
             gh release edit "$TAG" --title "$title" --notes-file notes.md
