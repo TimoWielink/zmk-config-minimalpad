@@ -7,7 +7,7 @@
 
 # The firmware's version, MAJOR.MINOR.PATCH, is kept in VERSION at the root of
 # this repo. The firmware reports it and the GitHub Actions build is named after
-# it (README, "Versions"). A change to VERSION reconfigures the build.
+# it (docs/releasing.md). A change to VERSION reconfigures the build.
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION)
 file(STRINGS ${CMAKE_CURRENT_SOURCE_DIR}/VERSION MINIMALPAD_VERSION LIMIT_COUNT 1)
 string(STRIP "${MINIMALPAD_VERSION}" MINIMALPAD_VERSION)

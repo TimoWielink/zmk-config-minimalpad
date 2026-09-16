@@ -89,7 +89,7 @@ Add any of these to `boards/shields/minimalpad/minimalpad.conf`:
 | `CONFIG_MINIMALPAD_HOST_LEDS_FORCE_SOLID` | `y` | Show Profile HSB exactly: Breathe generates brightness, while Spectrum and Swirl generate hue |
 | `CONFIG_MINIMALPAD_HOST_LOG_LEVEL_DBG` | off | Log what the module decides, with the `zmk-usb-logging` snippet |
 
-The firmware version Studio sees in `HELLO_ACK` is not a setting. It comes from the `VERSION` file, the same one the build is named after (README, "Versions").
+The firmware version Studio sees in `HELLO_ACK` is not a setting. It comes from the `VERSION` file, the same one the build is named after ([releasing.md](releasing.md)).
 
 ## Size
 

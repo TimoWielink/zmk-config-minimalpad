@@ -1,6 +1,6 @@
 # Changelog
 
-What changed in each version of the MinimalPad firmware. How versions are numbered and released is in the README, under "Versions". A version's section here becomes the description of its GitHub Release, so write it for the people who will flash it.
+What changed in each version of the MinimalPad firmware. How versions are numbered and released is in [docs/releasing.md](docs/releasing.md). A version's section here becomes the description of its GitHub Release, so write it for the people who will flash it.
 
 ## 0.3.0
 
