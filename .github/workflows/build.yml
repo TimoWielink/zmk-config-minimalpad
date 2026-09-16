@@ -83,7 +83,9 @@ jobs:
 
   build:
     needs: version
-    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
+    # ZMK's build workflow from the commit config/west.yml pins ZMK to, so a change
+    # upstream cannot change how the firmware builds. Change the two together.
+    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@9ebbeff0a8b69a42f14aec022cdf16c7a107b9e0
     with:
       archive_name: ${{ needs.version.outputs.archive_name }}
 

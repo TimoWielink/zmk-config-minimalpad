@@ -131,7 +131,7 @@ build minimalpad "nrf52840-nosd" ""
 build minimalpad_with_studio "studio-rpc-usb-uart nrf52840-nosd" "-DCONFIG_ZMK_STUDIO=y"
 ```
 
-The `.uf2` files end up in the volume at `build/<name>/zephyr/zmk.uf2`. `config/west.yml` pins the ZMK revision used by the combined USB transport; change that pin deliberately and rebuild both targets when adopting a newer ZMK revision.
+The `.uf2` files end up in the volume at `build/<name>/zephyr/zmk.uf2`. `config/west.yml` pins the ZMK revision used by the combined USB transport, and `.github/workflows/build.yml` builds with ZMK's workflow from the same commit. Change the two pins together, deliberately, and rebuild both targets when adopting a newer ZMK revision.
 
 ## Changing the protocol
 
