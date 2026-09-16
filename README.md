@@ -1,4 +1,4 @@
-![MinimalPad Firmware](https://i.imgur.com/PcZ9SqD.png)
+![MinimalPad Firmware](https://cdn.prod.website-files.com/67a8fe2ace8968bc2e48ba6c/6aaae79f281e8ecf0c5c70f7_minimalpad-firmware-github-banner.png)
 
 # MinimalPad firmware
 
