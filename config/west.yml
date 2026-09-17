@@ -6,7 +6,12 @@ manifest:
   projects:
     - name: zmk
       remote: zmkfirmware
-      revision: main
+      # The combined MinimalPad/ZMK Studio USB transport uses ZMK's Studio RPC
+      # transport seam. Pin the revision so an upstream internal change cannot
+      # silently produce firmware with a broken control channel.
+      # .github/workflows/build.yml uses ZMK's build workflow from the same
+      # commit; change the two together.
+      revision: 9ebbeff0a8b69a42f14aec022cdf16c7a107b9e0
       import: app/west.yml
 
   self:

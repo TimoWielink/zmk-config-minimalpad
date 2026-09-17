@@ -4,10 +4,21 @@ on:
   push:
     branches:
       - '*'
+    # A release: a tag named after VERSION, such as v1.4.2. Tag pushes build whatever
+    # the paths below say, and publish a GitHub Release.
+    tags:
+      - 'v*'
     paths:
       - 'config/**'
       - '.github/workflows/**'
       - 'boards/**'
+      - 'include/**'
+      - 'src/**'
+      - 'zephyr/**'
+      - 'CMakeLists.txt'
+      - 'Kconfig'
+      - 'VERSION'
+      - 'build.yaml'
   pull_request:
     branches:
       - '*'
@@ -15,8 +26,119 @@ on:
       - 'config/**'
       - '.github/workflows/**'
       - 'boards/**'
+      - 'include/**'
+      - 'src/**'
+      - 'zephyr/**'
+      - 'CMakeLists.txt'
+      - 'Kconfig'
+      - 'VERSION'
+      - 'build.yaml'
   workflow_dispatch:
 
 jobs:
+  version:
+    name: Read the version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.name.outputs.version }}
+      archive_name: ${{ steps.name.outputs.archive_name }}
+    steps:
+      - name: Checkout VERSION and the changelog
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            VERSION
+            CHANGELOG.md
+            .github/
+          sparse-checkout-cone-mode: false
+
+      - name: Name the firmware after the version
+        id: name
+        shell: bash
+        env:
+          COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          if [[ ! "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error file=VERSION::VERSION must be MAJOR.MINOR.PATCH, such as 1.4.2, not '$version'."
+            exit 1
+          fi
+
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            if [[ "$GITHUB_REF_NAME" != "v$version" ]]; then
+              echo "::error file=VERSION::The tag $GITHUB_REF_NAME does not match VERSION, $version. Tag the commit v$version, or change VERSION first."
+              exit 1
+            fi
+            # The release's description comes from the changelog, so check it before building.
+            python3 .github/scripts/release-notes.py "$version" > /dev/null
+            archive_name="minimalpad-v$version"
+          else
+            # Not a release, so the commit tells apart builds of the same version.
+            archive_name="minimalpad-v$version+${COMMIT::7}"
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "archive_name=$archive_name" >> "$GITHUB_OUTPUT"
+          echo "Firmware: \`$archive_name\`" >> "$GITHUB_STEP_SUMMARY"
+
   build:
-    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
+    needs: version
+    # ZMK's build workflow from the commit config/west.yml pins ZMK to, so a change
+    # upstream cannot change how the firmware builds. Change the two together.
+    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@9ebbeff0a8b69a42f14aec022cdf16c7a107b9e0
+    with:
+      archive_name: ${{ needs.version.outputs.archive_name }}
+
+  release:
+    name: Publish the release
+    if: github.ref_type == 'tag'
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download the firmware
+        uses: actions/download-artifact@v7
+        with:
+          name: ${{ needs.version.outputs.archive_name }}
+          path: firmware
+
+      - name: Name the files after the version
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(firmware/*.uf2)
+          if (( ${#files[@]} == 0 )); then
+            echo "::error::The build produced no .uf2 files to release."
+            exit 1
+          fi
+
+          mkdir release
+          for file in "${files[@]}"; do
+            cp "$file" "release/$(basename "$file" .uf2)-v$VERSION.uf2"
+          done
+          ls -l release
+
+      - name: Write the description
+        run: python3 .github/scripts/release-notes.py "$VERSION" notes.md
+
+      - name: Publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          title="MinimalPad firmware v$VERSION"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            # A re-run: bring the existing release in line with this build.
+            gh release edit "$TAG" --title "$title" --notes-file notes.md
+            gh release upload "$TAG" release/*.uf2 --clobber
+          else
+            gh release create "$TAG" release/*.uf2 --title "$title" --notes-file notes.md --verify-tag
+          fi

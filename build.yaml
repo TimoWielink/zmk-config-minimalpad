@@ -19,9 +19,9 @@
 #
 ---
 include:
-  - board: nice_nano//zmk
-    shield: minimalpad
-    snippet: nrf52840-nosd
+  # One firmware, always with ZMK Studio, which MinimalPad Studio needs. The artifact
+  # name is the .uf2 file's name, and a release adds the version to it.
+  # .github/release-notes.md names the file, so change the two together.
   - board: nice_nano//zmk
     shield: minimalpad
     snippet: studio-rpc-usb-uart nrf52840-nosd
