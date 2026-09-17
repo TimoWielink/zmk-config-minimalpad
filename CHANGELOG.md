@@ -10,8 +10,11 @@ The first published release. It also includes 0.1.0 and 0.2.0, which were not re
 - Over USB, ZMK Studio editing and profile control share one verified connection, so Studio for Mac cannot write a layout to one pad while it controls another.
 - USB stays automatic: the pad is still one serial device, so there is no port to pick.
 - There is one firmware file, `minimalpad_with_studio`, with ZMK Studio built in. The build without ZMK Studio is no longer made.
+- New default keys. The first layer, now called Default instead of Media, has macOS shortcuts: Spotlight, Mission Control, emoji, lock screen, copy, paste, undo, redo and two screenshot keys. It also has screen brightness and track controls. Pressing the knob mutes, and turning it still changes the volume.
+- A simpler BT + LED layer, still opened by holding the bottom-right key. It has Bluetooth devices 1 to 5, a key that clears the current device's pairing, keys that choose USB or Bluetooth, and lights on/off, effect, colour and brightness. Pressing the knob there switches the lights on or off.
+- Keys you changed and saved in MinimalPad Studio keep your setting.
 
-If the lights stay off after you flash it, switch them on once: hold the bottom-right key and press the third key on the bottom row.
+If the lights stay off after you flash it, switch them on once: hold the bottom-right key and press the knob.
 
 ## 0.2.0
 

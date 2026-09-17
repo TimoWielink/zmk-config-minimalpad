@@ -4,7 +4,7 @@
 #include <dt-bindings/zmk/rgb.h>
 #include <dt-bindings/zmk/outputs.h>
 
-#define MEDIA 0
+#define DEFAULT_LAYER 0
 #define BTLED 1
 
 / {
@@ -29,65 +29,70 @@
         compatible = "zmk,keymap";
 
         // ╔══════════╦══════════╦══════════╦══════════╗
-        // ║  PREV    ║  PLAY/   ║  NEXT    ║  MUTE    ║  Transport + mute
-        // ║  TRACK   ║  PAUSE   ║  TRACK   ║          ║
+        // ║SPOTLIGHT ║ MISSION  ║  EMOJI   ║   LOCK   ║  Find, see every window, emoji, lock
+        // ║          ║ CONTROL  ║          ║  SCREEN  ║
         // ╠══════════╬══════════╬══════════╬══════════╣
-        // ║  VOL −   ║  VOL +   ║  STOP    ║  EJECT   ║  Volume + stop/eject
+        // ║   COPY   ║  PASTE   ║   UNDO   ║   REDO   ║  Editing
         // ╠══════════╬══════════╬══════════╬══════════╣
-        // ║ REWIND   ║  FAST    ║ SCREEN   ║ SCREEN   ║  Scrub + screen brightness
-        // ║          ║  FWD     ║ BRI −    ║ BRI +    ║
+        // ║SCREENSHOT║ CAPTURE  ║  SCREEN  ║  SCREEN  ║  Screenshots + display brightness
+        // ║   AREA   ║  TOOLS   ║  BRI −   ║  BRI +   ║
         // ╠══════════╬══════════╬══════════╬══════════╣
-        // ║  VOL −   ║  VOL +   ║  PLAY/   ║ [HOLD]→  ║  Quick controls + layer hold
-        // ║          ║          ║  PAUSE   ║ BT + LED ║
+        // ║   PREV   ║  PLAY/   ║   NEXT   ║ [HOLD]→  ║  Media + layer hold
+        // ║  TRACK   ║  PAUSE   ║  TRACK   ║ BT + LED ║
         // ╠══════════╩══════════╩══════════╩══════════╣
-        // ║        PLAY / PAUSE  (encoder button)      ║
-        // ╚════════════════════════════════════════════╝
+        // ║           MUTE  (encoder button)          ║
+        // ╚═══════════════════════════════════════════╝
         //   Encoder rotation: Volume Up / Volume Down
+        //   The shortcuts are macOS ones: Cmd Space, Ctrl Up, Ctrl Cmd Space,
+        //   Ctrl Cmd Q, Cmd C / V / Z, Cmd Shift Z, Cmd Shift 4 and Cmd Shift 5.
         //   Hold the BOTTOM-RIGHT key to reach the BT + LED layer.
-        media_layer {
-            display-name = "Media";
+        default_layer {
+            display-name = "Default";
             bindings = <
-                &kp C_PREV      &kp C_PP        &kp C_NEXT      &kp C_MUTE
-                &kp C_VOL_DN    &kp C_VOL_UP    &kp C_STOP      &kp C_EJECT
-                &kp C_RW        &kp C_FF        &kp C_BRI_DN    &kp C_BRI_UP
-                &kp C_VOL_DN    &kp C_VOL_UP    &kp C_PP        &mo BTLED
-                &kp C_PP
+                &kp LG(SPACE)      &kp LC(UP)         &kp LC(LG(SPACE))  &kp LC(LG(Q))
+                &kp LG(C)          &kp LG(V)          &kp LG(Z)          &kp LG(LS(Z))
+                &kp LG(LS(N4))     &kp LG(LS(N5))     &kp C_BRI_DN       &kp C_BRI_UP
+                &kp C_PREV         &kp C_PP           &kp C_NEXT         &mo BTLED
+                &kp C_MUTE
             >;
             sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
         };
 
         // ╔══════════╦══════════╦══════════╦══════════╗
-        // ║ BT PROF  ║ BT PROF  ║ BT PROF  ║ BT PROF  ║  Select paired device
+        // ║BLUETOOTH ║BLUETOOTH ║BLUETOOTH ║BLUETOOTH ║  Paired devices 1-4
         // ║    1     ║    2     ║    3     ║    4     ║
         // ╠══════════╬══════════╬══════════╬══════════╣
-        // ║ BT PROF  ║ BT NEXT  ║ BT PREV  ║ USB/BLE  ║  Profile 5 + cycle + output
-        // ║    5     ║          ║          ║  TOGGLE  ║
+        // ║BLUETOOTH ║  CLEAR   ║   USE    ║   USE    ║  Device 5, forget this device's
+        // ║    5     ║ PAIRING  ║   USB    ║BLUETOOTH ║  pairing, choose the connection
         // ╠══════════╬══════════╬══════════╬══════════╣
-        // ║ LED      ║ LED      ║ LED      ║ LED      ║  Brightness + animation speed
-        // ║ BRI +    ║ BRI −    ║ SPEED +  ║ SPEED −  ║
+        // ║  LIGHTS  ║   NEXT   ║  COLOUR  ║  COLOUR  ║  Lights
+        // ║  ON/OFF  ║  EFFECT  ║    −     ║    +     ║
         // ╠══════════╬══════════╬══════════╬══════════╣
-        // ║ LED      ║ LED      ║ LED      ║          ║  Hue + effect + on/off
-        // ║ HUE +    ║ EFFECT   ║ ON/OFF   ║    —     ║
+        // ║  LIGHTS  ║  LIGHTS  ║          ║  (HELD)  ║  Light brightness
+        // ║  DIMMER  ║ BRIGHTER ║    —     ║          ║
         // ╠══════════╩══════════╩══════════╩══════════╣
-        // ║        (encoder btn — release to exit)     ║
-        // ╚════════════════════════════════════════════╝
-        //   Active while the bottom-right key is held (from the Media layer).
-        //   Encoder rotation here: LED Brightness Up / Down.
+        // ║      LIGHTS ON/OFF  (encoder button)      ║
+        // ╚═══════════════════════════════════════════╝
+        //   Active while the bottom-right key is held (from the Default layer).
+        //   Encoder rotation here: light brightness up / down.
+        //   USE USB and USE BLUETOOTH pick where keys go. The pad answers MinimalPad
+        //   Studio only on that connection, so choose USB to edit over a cable.
         btled_layer {
             display-name = "BT + LED";
             bindings = <
-                &bt BT_SEL 0    &bt BT_SEL 1    &bt BT_SEL 2    &bt BT_SEL 3
-                &bt BT_SEL 4    &bt BT_NXT      &bt BT_PRV      &out OUT_TOG
-                &rgb_ug RGB_BRI &rgb_ug RGB_BRD &rgb_ug RGB_SPI &rgb_ug RGB_SPD
-                &rgb_ug RGB_HUI &rgb_ug RGB_EFF &rgb_ug RGB_TOG &trans
-                &trans
+                &bt BT_SEL 0       &bt BT_SEL 1       &bt BT_SEL 2       &bt BT_SEL 3
+                &bt BT_SEL 4       &bt BT_CLR         &out OUT_USB       &out OUT_BLE
+                &rgb_ug RGB_TOG    &rgb_ug RGB_EFF    &rgb_ug RGB_HUD    &rgb_ug RGB_HUI
+                &rgb_ug RGB_BRD    &rgb_ug RGB_BRI    &none              &trans
+                &rgb_ug RGB_TOG
             >;
             sensor-bindings = <&rgb_encoder>;
         };
 
-        // Reserved slots, where Minimalpad Studio adds profile layers with ZMK Studio's
-        // add_layer: 14 of them, for 16 layers with Media and BT + LED. Only builds with
-        // ZMK Studio compile them in; without it the keymap is the two layers above.
+        // Reserved slots, where MinimalPad Studio for Mac adds profile layers with ZMK
+        // Studio's add_layer: 14 of them, for 16 layers with Default and BT + LED. Only
+        // builds with ZMK Studio compile them in; without it the keymap is the two layers
+        // above.
         extra_1 {
             status = "reserved";
         };

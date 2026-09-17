@@ -22,7 +22,7 @@ You don't need to build anything. Connect your pad to MinimalPad Studio, on the 
 3. **Press the pad's reset button twice**, quickly. A drive called NICENANO appears.
 4. **Copy the `.uf2` file** onto that drive. The pad restarts with the new firmware.
 
-If the drive doesn't appear, try another cable or USB port, or press reset a little faster or slower. If the lights stay off after the update, switch them on once: hold the bottom-right key and press the third key on the bottom row.
+If the drive doesn't appear, try another cable or USB port, or press reset a little faster or slower. If the lights stay off after the update, switch them on once: hold the bottom-right key and press the knob.
 
 ## For developers
 

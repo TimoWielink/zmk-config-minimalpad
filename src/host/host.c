@@ -3,7 +3,7 @@
  *
  * host-protocol.md is the contract with Minimalpad Studio. ADR 0005 is the rule
  * this file keeps: when nothing is driving the pad, it goes back to Default and
- * its own LEDs, the media pad it is out of the box.
+ * its own LEDs, the pad it is out of the box.
  *
  * Everything here runs on the system work queue, where ZMK also processes key
  * presses, so a profile switch never lands between a key's press and its

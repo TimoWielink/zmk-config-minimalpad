@@ -32,7 +32,7 @@ Without Studio running, nothing changes: the pad behaves exactly as its keymap s
 | `boards/shields/minimalpad/minimalpad.keymap` | 14 reserved layer slots instead of 3, so there is room for profiles |
 | `.github/workflows/build.yml` | Builds also run when only module code changes |
 
-The firmware, `minimalpad_with_studio`, has 16 layers: Media, BT + LED and 14 free for profiles. The reserved slots are only compiled into builds with ZMK Studio, and since 0.3.0 that is the only build.
+The firmware, `minimalpad_with_studio`, has 16 layers: Default, BT + LED and 14 free for profiles. The reserved slots are only compiled into builds with ZMK Studio, and since 0.3.0 that is the only build.
 
 ## How it works
 
