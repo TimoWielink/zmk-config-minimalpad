@@ -1,0 +1,8 @@
+# The DCO app checks every commit for a Signed-off-by line. This repo belongs to
+# one person, who is also the author of its commits, so that line only adds
+# noise to a certification he is already making by pushing.
+#
+# With this setting on a user-owned repository, the owner's commits pass without
+# a sign-off; a contribution from anyone else still needs one.
+require:
+  members: false
