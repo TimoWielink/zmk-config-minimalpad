@@ -22,10 +22,25 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
-/* Protocol version carried in byte 0 of every frame. A receiver ignores a
- * frame whose version it does not know, and ignores an unknown command, so a
- * newer app talking to an older pad degrades instead of breaking. */
-#define MP_HOST_PROTOCOL_VERSION 1
+/* The version byte in byte 0 of every frame. It is frozen at 1 and must never
+ * be raised. Both ends compare it for equality and ignore a frame whose version
+ * they do not know, so a pad that shipped a 2 here would go silent to every
+ * Studio already installed, and a newer Studio would look like a dead pad to an
+ * older one. There is no version of this protocol in which raising it helps.
+ *
+ * The protocol grows instead by adding fields to the end of a payload and
+ * announcing them with a capability bit, which both ends already tolerate: a
+ * decoder reads the fields it knows and ignores whatever trails them. */
+#define MP_HOST_FRAME_VERSION 1
+
+/* Which revision of this contract the firmware implements, reported in
+ * mp_hello_ack.proto and nowhere else. This is the number to raise when a field
+ * or a command is added, and Studio compares it with >= rather than ==, so a
+ * newer pad still talks to an older Mac.
+ *
+ * 1: the original six commands and seven events.
+ * 2: STATE grew mp_state_event.bt_profile, behind MP_CAP_BT_PROFILE. */
+#define MP_HOST_PROTOCOL_VERSION 2
 
 /* A frame never exceeds this, so it fits the smallest negotiated ATT MTU
  * (23 bytes, less 3 for the ATT header) without chunking. */
@@ -82,10 +97,13 @@ enum mp_host_event {
  * MP_FALLBACK_RELEASED. */
 #define MP_HEARTBEAT_RELEASE 0
 
-/* Capability bits in mp_hello_ack.caps. */
+/* Capability bits in mp_hello_ack.caps. A bit is how a field or a feature added
+ * after revision 1 announces itself, so a host knows whether a pad will send it
+ * rather than guessing from a version number. */
 #define MP_CAP_PROFILES BIT(0)
 #define MP_CAP_DIAL_SWAP BIT(1)
 #define MP_CAP_LEDS BIT(2)
+#define MP_CAP_BT_PROFILE BIT(3) /* STATE carries bt_profile */
 
 /* Why the pad returned to Default, in mp_fallback.reason. */
 enum mp_fallback_reason {
@@ -94,6 +112,11 @@ enum mp_fallback_reason {
 	MP_FALLBACK_BT_PROFILE_CHANGED = 2,
 	MP_FALLBACK_RELEASED = 3,
 };
+
+/* No Bluetooth slot is selected, or the firmware cannot say which is, in
+ * mp_state_event.bt_profile. Slots themselves are 0-based, the same numbering
+ * &bt BT_SEL takes in the keymap. */
+#define MP_BT_PROFILE_NONE 0xFF
 
 /* Where keys go, in mp_state_event.endpoint. */
 enum mp_endpoint {
@@ -196,6 +219,10 @@ struct mp_state_event {
 	uint8_t endpoint; /* enum mp_endpoint */
 	uint8_t battery; /* percent, 0xFF when unknown */
 	uint8_t leds_on;
+	/* Added in revision 2, so it is sent only when caps has MP_CAP_BT_PROFILE.
+	 * A host that predates it reads the five bytes it knows and ignores this
+	 * one, which is why the field goes on the end and not beside endpoint. */
+	uint8_t bt_profile; /* 0-4, the &bt BT_SEL slot, or MP_BT_PROFILE_NONE */
 } __packed;
 
 /* MP_EVT_FALLBACK: the pad has returned to Default. */

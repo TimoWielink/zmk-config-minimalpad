@@ -1,6 +1,6 @@
 # MinimalPad host module
 
-A small addition to the pad's firmware for MinimalPad Studio for Mac. The Bluetooth channel and Profile switching have run on a pad. Firmware 0.3.0 adds USB Profile control; that new route and Profile colour still need their physical-pad check after flashing.
+A small addition to the pad's firmware for MinimalPad Studio for Mac. The Bluetooth channel and Profile switching have run on a pad. Firmware 0.3.0 adds USB Profile control; that new route and Profile colour still need their physical-pad check after flashing. Firmware 0.4.0 adds the Bluetooth device to the pad's state report, which needs the same check.
 
 ## What it does
 
@@ -8,6 +8,7 @@ ZMK Studio already lets an app edit the keymap, but it cannot tell the pad which
 
 - **Profiles.** When you switch to an app that has a profile, such as Figma, Studio tells the pad to switch to that app's layer.
 - **Colour.** A Profile can set one temporary global Solid underglow colour, so you can see which Profile is active.
+- **Bluetooth device.** The pad says which of its Bluetooth devices is selected, so Studio can show you whether the pad is typing to this Mac or to another one.
 - **Safety net.** Studio sends a heartbeat every 2 seconds. If it stops (Studio quits, the Mac sleeps, the pad goes out of range), the pad returns to its Default layer and its own colours by itself within 6 seconds.
 
 Without Studio running, nothing changes: the pad behaves exactly as its keymap says.
@@ -38,13 +39,15 @@ The firmware, `minimalpad_with_studio`, has 16 layers: Default, BT + LED and 14 
 
 The Mac and the pad exchange the same frames of at most 20 bytes over either connection:
 
-- **USB:** the host frames share ZMK Studio's one CDC-ACM serial stream. ZMK Studio frames begin with `0xAB`; host frames begin with protocol version `0x01` and declare their length. The firmware and app separate them before either decoder sees them. There is still one serial port, so the pad identity verified by ZMK Studio and every Profile write are physically inseparable.
+- **USB:** the host frames share ZMK Studio's one CDC-ACM serial stream. ZMK Studio frames begin with `0xAB`; host frames begin with the frame version `0x01` and declare their length. The firmware and app separate them before either decoder sees them. There is still one serial port, so the pad identity verified by ZMK Studio and every Profile write are physically inseparable.
 - **Bluetooth:** the frames use the encrypted service `00000000-e7cd-4a56-8a90-8fd4561e0b05`. Only a Mac the pad is bonded with can connect.
+
+That version byte is frozen at `0x01` and will not change: raising it would make the pad look dead to every Studio already installed. The protocol grows instead by putting new fields on the end of a payload and announcing them as a capability in `HELLO_ACK`, so both ends read the fields they know and ignore whatever trails them. The pad therefore accepts a command that carries more bytes than it expects, and still refuses one that carries fewer.
 
 | Commands, Mac to pad | Events, pad to Mac |
 | --- | --- |
 | `HELLO`: who are you? | `HELLO_ACK`: firmware version, capabilities, free layers |
-| `SET_PROFILE`: switch layer, and optionally colour and dial | `STATE`: active profile, top layer, connection, battery, LEDs |
+| `SET_PROFILE`: switch layer, and optionally colour and dial | `STATE`: active profile, top layer, connection, battery, LEDs, Bluetooth device |
 | `HEARTBEAT`: still here; `0` means let go now | `FALLBACK`: back on Default, and why |
 | `SET_LEDS`: colour preview | `REJECTED`: a command was refused, and why |
 | `GET_STATE`: what are you doing? | `KEY_EVENT`, `DIAL_EVENT`, `ACTION_EVENT`: reserved for later |

@@ -2,6 +2,11 @@
 
 What changed in each version of the MinimalPad firmware. How versions are numbered and released is in [docs/releasing.md](docs/releasing.md). A version's section here becomes the description of its GitHub Release, so write it for the people who will flash it.
 
+## 0.4.0
+
+- MinimalPad Studio for Mac can show which Bluetooth device the pad is on. The pad now reports which of the five devices on the BT + LED layer is selected, and tells Studio again whenever you change it with one of those keys. An older Studio ignores this and works as it always did.
+- Nothing else changes: your keys, layers, profiles and lights are as you left them, and you don't need to pair the pad again.
+
 ## 0.3.0
 
 The first published release. It also includes 0.1.0 and 0.2.0, which were not released on their own: profiles and profile colours for MinimalPad Studio for Mac, the underglow's fade when the pad goes idle, deep sleep after 12 hours on battery, and the firmware version.
