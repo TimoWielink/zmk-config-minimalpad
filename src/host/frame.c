@@ -7,7 +7,9 @@
  *
  * The rules are host-protocol.md, "Frame": the three header bytes never move, a
  * length above 17 is not a frame, and a frame with an unknown version or
- * command is skipped by its length so the frame behind it still gets read.
+ * command is skipped by its length so the frame behind it still gets read. A
+ * payload longer than the command's own is a newer Studio's, and the command
+ * runs on the fields this firmware knows.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -26,7 +28,10 @@ typedef void (*mp_host_handler_t)(const struct mp_host_transport *from, const ui
 
 struct command {
     uint8_t id;
-    uint8_t payload_len;
+    /* The smallest payload this command may carry. The protocol grows by adding
+     * fields to the end of one, so a longer payload is the same command from a
+     * newer Studio and its extra bytes are ignored. */
+    uint8_t min_payload_len;
     /* Changes the pad, so only the active host may send it. */
     bool changes_pad;
     mp_host_handler_t handle;
@@ -73,9 +78,10 @@ static void dispatch(struct mp_host_reader *reader, const struct mp_host_transpo
     struct mp_host_frame_header header;
     memcpy(&header, reader->buf, sizeof(header));
 
-    if (header.version != MP_HOST_PROTOCOL_VERSION) {
-        // A version this firmware does not speak. The frame has already been measured by its
-        // length, which is safe because the header is the same in every version.
+    if (header.version != MP_HOST_FRAME_VERSION) {
+        // The version byte is frozen at 1, so anything else is not a frame of this protocol.
+        // It has already been measured by its length, which is safe because the header is the
+        // same whatever follows it.
         reader->skipped++;
         LOG_DBG("Skipping a version %d frame", header.version);
         return;
@@ -90,11 +96,13 @@ static void dispatch(struct mp_host_reader *reader, const struct mp_host_transpo
         return;
     }
 
-    if (header.length != command->payload_len) {
-        // Well framed, still malformed: not the payload this command carries.
+    if (header.length < command->min_payload_len) {
+        // Well framed, still malformed: too short to hold this command. Too long is not an
+        // error, because that is how the protocol grows; the handler reads the fields it knows
+        // and leaves the rest.
         reader->rejected++;
-        LOG_WRN("Rejecting command 0x%02x with %d payload bytes, expected %d", header.command,
-                header.length, command->payload_len);
+        LOG_WRN("Rejecting command 0x%02x with %d payload bytes, expected at least %d",
+                header.command, header.length, command->min_payload_len);
         mp_host_reject(from, header.command, MP_REJECTED_WRONG_LENGTH);
         return;
     }

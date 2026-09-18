@@ -43,6 +43,10 @@
 #include <zmk/battery.h>
 #endif
 
+#if IS_ENABLED(CONFIG_ZMK_BLE)
+#include <zmk/ble.h>
+#endif
+
 #if IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW)
 #include <zmk/rgb_underglow.h>
 
@@ -59,7 +63,7 @@
 LOG_MODULE_REGISTER(minimalpad_host, CONFIG_MINIMALPAD_HOST_LOG_LEVEL);
 
 BUILD_ASSERT(sizeof(struct mp_hello_ack) == 7, "HELLO_ACK carries 7 payload bytes");
-BUILD_ASSERT(sizeof(struct mp_state_event) == 5, "STATE carries 5 payload bytes");
+BUILD_ASSERT(sizeof(struct mp_state_event) == 6, "STATE carries 6 payload bytes");
 BUILD_ASSERT(sizeof(struct mp_fallback_event) == 1, "FALLBACK carries 1 payload byte");
 BUILD_ASSERT(sizeof(struct mp_rejected_event) == 2, "REJECTED carries 2 payload bytes");
 
@@ -98,7 +102,7 @@ static int send_frame(int (*send)(const uint8_t *frame, size_t len), uint8_t eve
     }
 
     const struct mp_host_frame_header header = {
-        .version = MP_HOST_PROTOCOL_VERSION,
+        .version = MP_HOST_FRAME_VERSION,
         .command = event,
         .length = len,
     };
@@ -342,6 +346,30 @@ static uint8_t state_endpoint(enum zmk_transport transport) {
     }
 }
 
+/*
+ * STATE's Bluetooth slot: which of the pad's &bt BT_SEL devices is the selected
+ * one, so Studio can tell the person whether the pad is talking to this Mac or
+ * to another of their devices. A slot stays selected whether or not anything is
+ * connected to it, so this is not the same question as the endpoint.
+ */
+static uint8_t state_bt_profile(void) {
+#if IS_ENABLED(CONFIG_ZMK_BLE)
+    const int index = zmk_ble_active_profile_index();
+
+    // An index outside the slots this build compiled in is not a number a host could act on,
+    // so say nothing rather than a slot that is not there.
+    if (index < 0 || index >= ZMK_BLE_PROFILE_COUNT) {
+        return MP_BT_PROFILE_NONE;
+    }
+
+    return (uint8_t)index;
+#else
+    // A build without Bluetooth has no slot to be on. The byte still goes out, so the shape of
+    // a STATE frame does not depend on how the firmware was configured.
+    return MP_BT_PROFILE_NONE;
+#endif
+}
+
 static struct mp_state_event current_state(void) {
     return (struct mp_state_event){
         .layer_id = host_layer,
@@ -349,6 +377,7 @@ static struct mp_state_event current_state(void) {
         .endpoint = state_endpoint(zmk_endpoint_get_selected().transport),
         .battery = battery_percent(),
         .leds_on = leds_on(),
+        .bt_profile = state_bt_profile(),
     };
 }
 
@@ -361,12 +390,13 @@ static void state_update(struct k_work *work) {
     const bool forced = atomic_set(&state_forced, 0);
     const struct mp_state_event state = current_state();
 
-    // host-protocol.md, "State": sent whenever the layer, endpoint or LED state changes.
-    // Battery rides along but does not send one by itself.
+    // host-protocol.md, "State": sent whenever the layer, endpoint, LED state or Bluetooth
+    // slot changes. Battery rides along but does not send one by itself.
     const bool changed = !last_state_valid || state.layer_id != last_state.layer_id ||
                          state.top_layer_id != last_state.top_layer_id ||
                          state.endpoint != last_state.endpoint ||
-                         state.leds_on != last_state.leds_on;
+                         state.leds_on != last_state.leds_on ||
+                         state.bt_profile != last_state.bt_profile;
 
     if (!forced && !changed) {
         return;
@@ -524,7 +554,11 @@ void mp_host_handle_hello(const struct mp_host_transport *from, const uint8_t *p
         .fw_minor = MINIMALPAD_VERSION_MINOR,
         .fw_patch = MINIMALPAD_VERSION_PATCH,
         // Dial swap stays clear until the dial keycodes SET_PROFILE carries drive the dial.
-        .caps = MP_CAP_PROFILES | (IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW) ? MP_CAP_LEDS : 0),
+        // The Bluetooth slot is claimed on every build, including one without Bluetooth, where
+        // the byte can only say MP_BT_PROFILE_NONE: the bit promises the host that STATE
+        // carries the field, not that the pad has a slot to report.
+        .caps = MP_CAP_PROFILES | MP_CAP_BT_PROFILE |
+                (IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW) ? MP_CAP_LEDS : 0),
         .layer_count = ZMK_KEYMAP_LAYERS_LEN,
         .free_layers = free_layer_slots(),
     };
