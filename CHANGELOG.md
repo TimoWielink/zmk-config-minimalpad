@@ -2,6 +2,11 @@
 
 What changed in each version of the MinimalPad firmware. How versions are numbered and released is in [docs/releasing.md](docs/releasing.md). A version's section here becomes the description of its GitHub Release, so write it for the people who will flash it.
 
+## 0.4.1
+
+- MinimalPad Studio for Mac can now read your layout and switch profiles over Bluetooth. Before this, a wireless edit got part of the way through and then stopped, and the pad had to be on a cable to work on it.
+- Nothing else changes: your keys, layers, profiles and lights are as you left them, and you don't need to pair the pad again.
+
 ## 0.4.0
 
 - MinimalPad Studio for Mac can show which Bluetooth device the pad is on. The pad now reports which of the five devices on the BT + LED layer is selected, and tells Studio again whenever you change it with one of those keys. An older Studio ignores this and works as it always did.
