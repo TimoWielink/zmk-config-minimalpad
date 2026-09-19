@@ -1,4 +1,5 @@
-# Minimalpad firmware additions: the host module and the underglow's idle fade
+# Minimalpad firmware additions: the host module, a corrected ZMK Studio Bluetooth
+# transport, and the underglow's idle fade
 # SPDX-License-Identifier: MIT
 
 menuconfig MINIMALPAD_HOST
@@ -68,6 +69,27 @@ module-str = Minimalpad host module
 source "subsys/logging/Kconfig.template.log_config"
 
 endif # MINIMALPAD_HOST
+
+config MINIMALPAD_STUDIO_BLE
+    bool "ZMK Studio over Bluetooth, with the connection leak fixed"
+    depends on ZMK_STUDIO_RPC && ZMK_BLE && !ZMK_STUDIO_TRANSPORT_BLE
+    select RING_BUFFER
+    select BT_USER_DATA_LEN_UPDATE
+    default y
+    help
+      Takes the place of ZMK_STUDIO_TRANSPORT_BLE, which must be off. ZMK's
+      transport leaks a reference to the host's connection on every answer
+      longer than one packet, and after the host's next reconnect the pad sends
+      it nothing until the pad restarts. src/studio/gatt_rpc_transport.c says
+      how. The service is the same one, so nothing changes for a host.
+
+config MINIMALPAD_STUDIO_BLE_PREF_LATENCY
+    int "Latency to ask for while ZMK Studio is connected over Bluetooth"
+    depends on MINIMALPAD_STUDIO_BLE
+    default 10
+    help
+      ZMK_STUDIO_TRANSPORT_BLE_PREF_LATENCY under this build's name, with
+      ZMK's default.
 
 menuconfig MINIMALPAD_LEDS_IDLE_FADE
     bool "Fade the underglow out when the pad goes idle"
