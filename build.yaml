@@ -27,3 +27,22 @@ include:
     snippet: studio-rpc-usb-uart nrf52840-nosd
     cmake-args: -DCONFIG_ZMK_STUDIO=y
     artifact-name: minimalpad_with_studio
+
+  # The way back from a pad whose Bluetooth bonds have got into a state nothing
+  # on a Mac can see or repair. Flashing the firmware above never clears them:
+  # a firmware flash leaves the settings partition alone on purpose, which is
+  # what makes a keymap survive an update. This build erases that partition and
+  # stops, and is flashed before the firmware above, not instead of it.
+  #
+  # `nrf52840-nosd` is not optional here, and leaving it off is worse than
+  # leaving the build out altogether. That snippet moves the partitions, putting
+  # storage_partition at 0xd4000, and the firmware above is built with it. A
+  # reset built without it erases wherever the stock layout puts storage, which
+  # is not where these bonds are: it would report success and change nothing.
+  #
+  # The shield turns ZMK_BLE off, so the host module and the LED fade configure
+  # themselves out (Kconfig, CMakeLists.txt) and nothing here needs a guard.
+  - board: nice_nano//zmk
+    shield: settings_reset
+    snippet: nrf52840-nosd
+    artifact-name: minimalpad_settings_reset
