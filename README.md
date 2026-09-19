@@ -4,7 +4,7 @@
 
 ZMK firmware for the MinimalPad macropad. Get the latest version for your pad here.
 
-**Firmware version: 0.4.1.** What changed is in [CHANGELOG.md](CHANGELOG.md).
+**Firmware version: 0.4.2.** What changed is in [CHANGELOG.md](CHANGELOG.md).
 
 - **Website:** [minimalmacropad.com](https://minimalmacropad.com)
 - **MinimalPad Studio, web version:** [studio.minimalmacropad.com](https://studio.minimalmacropad.com), in Chrome or Edge

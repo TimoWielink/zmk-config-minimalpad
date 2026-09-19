@@ -2,6 +2,12 @@
 
 What changed in each version of the MinimalPad firmware. How versions are numbered and released is in [docs/releasing.md](docs/releasing.md). A version's section here becomes the description of its GitHub Release, so write it for the people who will flash it.
 
+## 0.4.2
+
+- The pad keeps working over Bluetooth after your computer reconnects to it. Before this, once MinimalPad Studio had read the layout over Bluetooth, the next reconnect (restarting the Mac, turning Bluetooth off and on, the Mac waking up) left the pad showing as connected while no key, dial turn or Studio edit got through. Restarting the pad brought it back, until the next reconnect.
+- The cause is a fault in ZMK's own Studio code, which this firmware now replaces with a corrected copy. You don't need to pair the pad again, and forgetting it in your Bluetooth settings was never the cure.
+- Nothing else changes: your keys, layers, profiles and lights are as you left them.
+
 ## 0.4.1
 
 - MinimalPad Studio for Mac can now read your layout and switch profiles over Bluetooth. Before this, a wireless edit got part of the way through and then stopped, and the pad had to be on a cable to work on it.
