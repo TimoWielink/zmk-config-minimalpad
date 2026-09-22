@@ -39,8 +39,9 @@
  * newer pad still talks to an older Mac.
  *
  * 1: the original six commands and seven events.
- * 2: STATE grew mp_state_event.bt_profile, behind MP_CAP_BT_PROFILE. */
-#define MP_HOST_PROTOCOL_VERSION 2
+ * 2: STATE grew mp_state_event.bt_profile, behind MP_CAP_BT_PROFILE.
+ * 3: the pad sends ACTION_EVENT for &mac_action keys, behind MP_CAP_MAC_ACTIONS. */
+#define MP_HOST_PROTOCOL_VERSION 3
 
 /* A frame never exceeds this, so it fits the smallest negotiated ATT MTU
  * (23 bytes, less 3 for the ATT header) without chunking. */
@@ -104,6 +105,7 @@ enum mp_host_event {
 #define MP_CAP_DIAL_SWAP BIT(1)
 #define MP_CAP_LEDS BIT(2)
 #define MP_CAP_BT_PROFILE BIT(3) /* STATE carries bt_profile */
+#define MP_CAP_MAC_ACTIONS BIT(4) /* &mac_action keys send ACTION_EVENT */
 
 /* Why the pad returned to Default, in mp_fallback.reason. */
 enum mp_fallback_reason {
@@ -202,7 +204,10 @@ struct mp_dial_event {
 	uint8_t detents;
 } __packed;
 
-/* MP_EVT_ACTION: sent by the &mac_action behavior. */
+/* MP_EVT_ACTION: sent by the &mac_action behavior on the way down and on the
+ * way up, to every host listening. The pad cannot do the work: action_id is the
+ * key's parameter, and Studio does whatever it saved under that id for this pad.
+ * Sent only by firmware that advertises MP_CAP_MAC_ACTIONS. */
 struct mp_action_event {
 	uint8_t action_id;
 	uint8_t pressed;

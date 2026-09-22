@@ -23,6 +23,14 @@
             #sensor-binding-cells = <0>;
             bindings = <&rgb_ug RGB_BRI>, <&rgb_ug RGB_BRD>;
         };
+
+        // Mac action key: does nothing on the pad, tells MinimalPad Studio for Mac
+        // which action id went down or up. No key uses it here; Studio assigns it.
+        mac_action: mac_action {
+            compatible = "minimalpad,behavior-mac-action";
+            #binding-cells = <1>;
+            display-name = "Mac Action";
+        };
     };
 
     keymap {

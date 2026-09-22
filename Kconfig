@@ -54,6 +54,17 @@ config MINIMALPAD_HOST_HEARTBEAT_DEFAULT_TIMEOUT
       this window, so a host that stops between switching and its first
       heartbeat still cannot leave the pad on a profile (ADR 0005).
 
+config MINIMALPAD_MAC_ACTION
+    bool "The &mac_action key, which sends ACTION_EVENT to Studio"
+    depends on DT_HAS_MINIMALPAD_BEHAVIOR_MAC_ACTION_ENABLED
+    default y
+    help
+      A key bound to &mac_action N does nothing on the pad. On the way down
+      and on the way up it sends ACTION_EVENT with N to every host listening,
+      and Minimalpad Studio does whatever it saved under that id, such as
+      opening an app. Without Studio running the key is inert. The build
+      advertises MP_CAP_MAC_ACTIONS in HELLO_ACK when this is on.
+
 config MINIMALPAD_HOST_LEDS_FORCE_SOLID
     bool "Show a host colour with the solid effect"
     depends on ZMK_RGB_UNDERGLOW

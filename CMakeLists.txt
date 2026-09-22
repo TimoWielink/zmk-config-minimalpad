@@ -46,6 +46,9 @@ if(CONFIG_MINIMALPAD_HOST)
   target_sources_ifdef(CONFIG_MINIMALPAD_HOST_USB app PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/host/transport_usb.c
   )
+  target_sources_ifdef(CONFIG_MINIMALPAD_MAC_ACTION app PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/behaviors/mac_action.c
+  )
 endif()
 
 target_sources_ifdef(CONFIG_MINIMALPAD_STUDIO_BLE app PRIVATE
