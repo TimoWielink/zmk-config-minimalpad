@@ -96,8 +96,9 @@ void mp_host_reject(const struct mp_host_transport *from, uint8_t command,
 
 /*
  * Sends one event to one transport, or to every transport with a host
- * listening. The events still to come, KEY_EVENT, DIAL_EVENT and ACTION_EVENT,
- * go out through mp_host_broadcast() with their structs from
+ * listening. ACTION_EVENT goes out through mp_host_broadcast() from the
+ * &mac_action behavior (src/behaviors/mac_action.c). The events still to come,
+ * KEY_EVENT and DIAL_EVENT, go the same way with their structs from
  * mp_host_protocol.h.
  */
 int mp_host_send(const struct mp_host_transport *to, uint8_t event, const void *payload,

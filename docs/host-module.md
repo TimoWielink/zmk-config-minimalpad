@@ -1,6 +1,6 @@
 # MinimalPad host module
 
-A small addition to the pad's firmware for MinimalPad Studio for Mac. The Bluetooth channel and Profile switching have run on a pad. Firmware 0.3.0 adds USB Profile control; that new route and Profile colour still need their physical-pad check after flashing. Firmware 0.4.0 adds the Bluetooth device to the pad's state report, which needs the same check.
+A small addition to the pad's firmware for MinimalPad Studio for Mac. The Bluetooth channel and Profile switching have run on a pad. Firmware 0.3.0 adds USB Profile control; that new route and Profile colour still need their physical-pad check after flashing. Firmware 0.4.0 adds the Bluetooth device to the pad's state report, which needs the same check. Firmware 0.5.0 adds the Mac action key, which tells Studio when it goes down or up so Studio can open an app.
 
 ## What it does
 
@@ -27,6 +27,9 @@ Without Studio running, nothing changes: the pad behaves exactly as its keymap s
 | `src/host/host.c` | What each command does: layers, LEDs, heartbeat and fallback, state reports |
 | `src/host/transport_gatt.c` | The Bluetooth GATT service the Mac talks to |
 | `src/host/transport_usb.c` | Shares ZMK Studio's one USB serial stream without adding another port |
+| `src/behaviors/mac_action.c` | The `&mac_action` key: sends `ACTION_EVENT` when it goes down or up, and does nothing else |
+| `dts/bindings/behaviors/minimalpad,behavior-mac-action.yaml` | Tells the keymap and ZMK Studio what `&mac_action` is and that it takes one number |
+| `dts/bindings/vendor-prefixes.txt` | Registers the `minimalpad` vendor prefix, so the build does not warn about it |
 | `include/minimalpad/mp_host_protocol.h` | The wire format, copied byte for byte from MinimalPad Studio for Mac |
 | `include/minimalpad/host.h` | How those three files fit together |
 | `Kconfig`, `CMakeLists.txt`, `zephyr/module.yml` | Make this repo a Zephyr module, so ZMK compiles the code |
@@ -50,8 +53,8 @@ That version byte is frozen at `0x01` and will not change: raising it would make
 | `SET_PROFILE`: switch layer, and optionally colour and dial | `STATE`: active profile, top layer, connection, battery, LEDs, Bluetooth device |
 | `HEARTBEAT`: still here; `0` means let go now | `FALLBACK`: back on Default, and why |
 | `SET_LEDS`: colour preview | `REJECTED`: a command was refused, and why |
-| `GET_STATE`: what are you doing? | `KEY_EVENT`, `DIAL_EVENT`, `ACTION_EVENT`: reserved for later |
-| `ENTER_BOOTLOADER`: reboot into flash mode, guarded by a magic number | |
+| `GET_STATE`: what are you doing? | `ACTION_EVENT`: a Mac action key went down or up, for Studio to act on |
+| `ENTER_BOOTLOADER`: reboot into flash mode, guarded by a magic number | `KEY_EVENT`, `DIAL_EVENT`: reserved for later |
 
 Rules the firmware keeps:
 
@@ -89,6 +92,7 @@ Add any of these to `boards/shields/minimalpad/minimalpad.conf`:
 | `CONFIG_MINIMALPAD_HOST_USB` | `y` in the Studio USB build | Carry Profile control beside ZMK Studio on its one serial port |
 | `CONFIG_MINIMALPAD_HOST_USB_TX_BUFFER_SIZE` | `512` | Bytes reserved while Studio and host replies share USB |
 | `CONFIG_MINIMALPAD_HOST_HEARTBEAT_DEFAULT_TIMEOUT` | `6` | Seconds before falling back, until Studio's first heartbeat sets its own |
+| `CONFIG_MINIMALPAD_MAC_ACTION` | `y` | The `&mac_action` key. Set `n` to build without it; the pad then no longer claims Mac actions in `HELLO_ACK` |
 | `CONFIG_MINIMALPAD_HOST_LEDS_FORCE_SOLID` | `y` | Show Profile HSB exactly: Breathe generates brightness, while Spectrum and Swirl generate hue |
 | `CONFIG_MINIMALPAD_HOST_LOG_LEVEL_DBG` | off | Log what the module decides, with the `zmk-usb-logging` snippet |
 

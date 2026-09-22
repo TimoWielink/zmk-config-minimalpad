@@ -1,0 +1,9 @@
+# The &mac_action key: does nothing on the pad, and sends ACTION_EVENT to
+# MinimalPad Studio on the way down and on the way up (src/behaviors/mac_action.c)
+# SPDX-License-Identifier: MIT
+
+description: Mac action key, which sends ACTION_EVENT to MinimalPad Studio for Mac
+
+compatible: "minimalpad,behavior-mac-action"
+
+include: one_param.yaml

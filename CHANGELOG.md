@@ -2,6 +2,11 @@
 
 What changed in each version of the MinimalPad firmware. How versions are numbered and released is in [docs/releasing.md](docs/releasing.md). A version's section here becomes the description of its GitHub Release, so write it for the people who will flash it.
 
+## 0.5.0
+
+- A key can now open a Mac app. MinimalPad Studio for Mac, from its next release, offers "Open app" for any key. The pad tells Studio which key was pressed and Studio opens the app, or brings it forward if it's already open. It works only while Studio is running: without it, the key does nothing.
+- Nothing else changes: your keys, layers, profiles and lights are as you left them, and you don't need to pair the pad again.
+
 ## 0.4.2
 
 - The pad keeps working over Bluetooth after your computer reconnects to it. Before this, once MinimalPad Studio had read the layout over Bluetooth, the next reconnect (restarting the Mac, turning Bluetooth off and on, the Mac waking up) left the pad showing as connected while no key, dial turn or Studio edit got through. Restarting the pad brought it back, until the next reconnect.
