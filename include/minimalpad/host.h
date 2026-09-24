@@ -120,8 +120,8 @@ void mp_host_host_arrived(const struct mp_host_transport *transport);
 void mp_host_leds_changed(void);
 
 /*
- * The dial keycodes the last SET_PROFILE carried with its dial flag set, for
- * the dial swap still to come. Returns false when the pad's own dial binding
- * applies.
+ * The dial values the last SET_PROFILE carried with its dial flag set, which
+ * &host_dial uses (src/behaviors/host_dial.c). Returns false when the pad's
+ * own dial binding applies. Call from the system work queue.
  */
 bool mp_host_dial_keycodes(uint32_t *clockwise, uint32_t *counter_clockwise);

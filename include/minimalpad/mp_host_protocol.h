@@ -40,8 +40,10 @@
  *
  * 1: the original six commands and seven events.
  * 2: STATE grew mp_state_event.bt_profile, behind MP_CAP_BT_PROFILE.
- * 3: the pad sends ACTION_EVENT for &mac_action keys, behind MP_CAP_MAC_ACTIONS. */
-#define MP_HOST_PROTOCOL_VERSION 3
+ * 3: the pad sends ACTION_EVENT for &mac_action keys, behind MP_CAP_MAC_ACTIONS.
+ * 4: SET_PROFILE's dial values drive the dial, and a dial value can scroll,
+ *    behind MP_CAP_DIAL_SWAP. */
+#define MP_HOST_PROTOCOL_VERSION 4
 
 /* A frame never exceeds this, so it fits the smallest negotiated ATT MTU
  * (23 bytes, less 3 for the ATT header) without chunking. */
@@ -102,10 +104,38 @@ enum mp_host_event {
  * after revision 1 announces itself, so a host knows whether a pad will send it
  * rather than guessing from a version number. */
 #define MP_CAP_PROFILES BIT(0)
-#define MP_CAP_DIAL_SWAP BIT(1)
+#define MP_CAP_DIAL_SWAP BIT(1) /* SET_PROFILE's dial values drive the dial */
 #define MP_CAP_LEDS BIT(2)
 #define MP_CAP_BT_PROFILE BIT(3) /* STATE carries bt_profile */
 #define MP_CAP_MAC_ACTIONS BIT(4) /* &mac_action keys send ACTION_EVENT */
+
+/* What one dial value in SET_PROFILE does, one per direction of turn. It is a
+ * ZMK keycode, so modifier flags in bits 31-24, a HID usage page in bits 23-16
+ * and a usage id in bits 15-0, and the page says which kind:
+ *
+ * - The keyboard page (0x07) or the consumer page (0x0C): the pad taps that
+ *   key with those modifiers, as &kp would, once per step of the dial.
+ * - MP_DIAL_PAGE_SCROLL: the pad scrolls one wheel step per step of the dial,
+ *   in the direction the usage id names, with those modifiers held.
+ * - 0: the dial does nothing that way.
+ *
+ * A SET_PROFILE with its dial flag set and a value of any other page is
+ * rejected with MP_REJECTED_OUT_OF_RANGE. Page 0x01 is HID's Generic Desktop,
+ * where the wheel lives; &kp never sends it, so no key collides. */
+#define MP_DIAL_PAGE_KEYBOARD 0x07
+#define MP_DIAL_PAGE_CONSUMER 0x0C
+#define MP_DIAL_PAGE_SCROLL 0x01
+
+enum mp_dial_scroll {
+	MP_DIAL_SCROLL_UP = 1,
+	MP_DIAL_SCROLL_DOWN = 2,
+	MP_DIAL_SCROLL_LEFT = 3,
+	MP_DIAL_SCROLL_RIGHT = 4,
+};
+
+#define MP_DIAL_MODIFIERS(value) ((uint8_t)((value) >> 24))
+#define MP_DIAL_PAGE(value) ((uint8_t)((value) >> 16))
+#define MP_DIAL_USAGE(value) ((uint16_t)(value))
 
 /* Why the pad returned to Default, in mp_fallback.reason. */
 enum mp_fallback_reason {
@@ -157,8 +187,8 @@ struct mp_set_profile {
 	uint16_t hue; /* 0-359 */
 	uint8_t saturation; /* 0-100 */
 	uint8_t brightness; /* 0-100 */
-	uint32_t dial_cw; /* ZMK keycode */
-	uint32_t dial_ccw; /* ZMK keycode */
+	uint32_t dial_cw; /* a dial value, see MP_DIAL_PAGE_SCROLL */
+	uint32_t dial_ccw; /* a dial value */
 } __packed;
 
 /* MP_CMD_HEARTBEAT: the pad returns to Default when this window passes. */

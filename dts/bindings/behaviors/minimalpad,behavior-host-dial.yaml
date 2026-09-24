@@ -1,0 +1,21 @@
+# &host_dial: the dial MinimalPad Studio can change per profile. While Studio has
+# set dial values it does what they say; otherwise it taps its own bindings, as
+# zmk,behavior-sensor-rotate does (src/behaviors/host_dial.c)
+# SPDX-License-Identifier: MIT
+
+description: Dial that follows MinimalPad Studio's profile, with its own bindings otherwise
+
+compatible: "minimalpad,behavior-host-dial"
+
+properties:
+  "#sensor-binding-cells":
+    type: int
+    required: true
+    const: 0
+  bindings:
+    type: phandle-array
+    required: true
+    description: What turning clockwise, then counter-clockwise, does without Studio
+  tap-ms:
+    type: int
+    default: 5

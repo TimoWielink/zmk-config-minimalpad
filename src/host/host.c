@@ -85,7 +85,8 @@ static const struct mp_host_transport *const transports[] = {
 /* The layer the host last set: STATE's layer_id, the profile. */
 static zmk_keymap_layer_id_t host_layer;
 
-/* SET_PROFILE's dial keycodes, kept for the dial swap still to come. */
+/* SET_PROFILE's dial values, which &host_dial on Default uses while they are set
+ * (src/behaviors/host_dial.c). */
 static bool dial_set;
 static uint32_t dial_cw;
 static uint32_t dial_ccw;
@@ -553,14 +554,16 @@ void mp_host_handle_hello(const struct mp_host_transport *from, const uint8_t *p
         .fw_major = MINIMALPAD_VERSION_MAJOR,
         .fw_minor = MINIMALPAD_VERSION_MINOR,
         .fw_patch = MINIMALPAD_VERSION_PATCH,
-        // Dial swap stays clear until the dial keycodes SET_PROFILE carries drive the dial.
+        // Dial swap is claimed when &host_dial is compiled in, since it is what makes
+        // SET_PROFILE's dial values drive the dial.
         // The Bluetooth slot is claimed on every build, including one without Bluetooth, where
         // the byte can only say MP_BT_PROFILE_NONE: the bit promises the host that STATE
         // carries the field, not that the pad has a slot to report.
         // Mac actions are claimed when the &mac_action behavior is compiled in.
         .caps = MP_CAP_PROFILES | MP_CAP_BT_PROFILE |
                 (IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW) ? MP_CAP_LEDS : 0) |
-                (IS_ENABLED(CONFIG_MINIMALPAD_MAC_ACTION) ? MP_CAP_MAC_ACTIONS : 0),
+                (IS_ENABLED(CONFIG_MINIMALPAD_MAC_ACTION) ? MP_CAP_MAC_ACTIONS : 0) |
+                (IS_ENABLED(CONFIG_MINIMALPAD_HOST_DIAL) ? MP_CAP_DIAL_SWAP : 0),
         .layer_count = ZMK_KEYMAP_LAYERS_LEN,
         .free_layers = free_layer_slots(),
     };
@@ -571,6 +574,24 @@ void mp_host_handle_hello(const struct mp_host_transport *from, const uint8_t *p
     // already volunteered STATE on subscribe; forcing a current one here is
     // harmless and makes both transports follow one handshake rule.
     mp_host_host_arrived(from);
+}
+
+/* host-protocol.md, "Dial values": a key, a scroll, or nothing. */
+static bool dial_value_valid(uint32_t value) {
+    if (value == 0) {
+        return true;
+    }
+
+    switch (MP_DIAL_PAGE(value)) {
+    case MP_DIAL_PAGE_KEYBOARD:
+    case MP_DIAL_PAGE_CONSUMER:
+        return true;
+    case MP_DIAL_PAGE_SCROLL:
+        return MP_DIAL_USAGE(value) >= MP_DIAL_SCROLL_UP &&
+               MP_DIAL_USAGE(value) <= MP_DIAL_SCROLL_RIGHT;
+    default:
+        return false;
+    }
 }
 
 void mp_host_handle_set_profile(const struct mp_host_transport *from, const uint8_t *payload) {
@@ -586,6 +607,14 @@ void mp_host_handle_set_profile(const struct mp_host_transport *from, const uint
     if (!leds_in_range(hue, cmd.saturation, cmd.brightness)) {
         LOG_WRN("Rejecting SET_PROFILE with colour %d/%d/%d out of range", hue, cmd.saturation,
                 cmd.brightness);
+        mp_host_reject(from, MP_CMD_SET_PROFILE, MP_REJECTED_OUT_OF_RANGE);
+        return;
+    }
+
+    const uint32_t cw = sys_le32_to_cpu(cmd.dial_cw);
+    const uint32_t ccw = sys_le32_to_cpu(cmd.dial_ccw);
+    if (set_dial && !(dial_value_valid(cw) && dial_value_valid(ccw))) {
+        LOG_WRN("Rejecting SET_PROFILE with dial values 0x%08x/0x%08x", cw, ccw);
         mp_host_reject(from, MP_CMD_SET_PROFILE, MP_REJECTED_OUT_OF_RANGE);
         return;
     }
@@ -612,8 +641,8 @@ void mp_host_handle_set_profile(const struct mp_host_transport *from, const uint
     }
 
     if (set_dial) {
-        dial_cw = sys_le32_to_cpu(cmd.dial_cw);
-        dial_ccw = sys_le32_to_cpu(cmd.dial_ccw);
+        dial_cw = cw;
+        dial_ccw = ccw;
         dial_set = true;
     } else {
         dial_set = false;

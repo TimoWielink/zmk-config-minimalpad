@@ -24,6 +24,16 @@
             bindings = <&rgb_ug RGB_BRI>, <&rgb_ug RGB_BRD>;
         };
 
+        // The dial on Default, and so in every profile, which defines no dial of its own.
+        // MinimalPad Studio can give each profile its own dial action: a key or a scroll,
+        // with modifiers. Without Studio, and when the pad falls back to Default, it
+        // changes the volume. BT + LED keeps its own dial.
+        host_dial: host_dial {
+            compatible = "minimalpad,behavior-host-dial";
+            #sensor-binding-cells = <0>;
+            bindings = <&kp C_VOL_UP>, <&kp C_VOL_DN>;
+        };
+
         // Mac action key: does nothing on the pad, tells MinimalPad Studio for Mac
         // which action id went down or up. No key uses it here; Studio assigns it.
         mac_action: mac_action {
@@ -50,7 +60,7 @@
         // ╠══════════╩══════════╩══════════╩══════════╣
         // ║           MUTE  (encoder button)          ║
         // ╚═══════════════════════════════════════════╝
-        //   Encoder rotation: Volume Up / Volume Down
+        //   Encoder rotation: Volume Up / Volume Down, or the active profile's dial action
         //   The shortcuts are macOS ones: Cmd Space, Ctrl Up, Ctrl Cmd Space,
         //   Ctrl Cmd Q, Cmd C / V / Z, Cmd Shift Z, Cmd Shift 4 and Cmd Shift 5.
         //   Hold the BOTTOM-RIGHT key to reach the BT + LED layer.
@@ -63,7 +73,7 @@
                 &kp C_PREV         &kp C_PP           &kp C_NEXT         &mo BTLED
                 &kp C_MUTE
             >;
-            sensor-bindings = <&inc_dec_kp C_VOL_UP C_VOL_DN>;
+            sensor-bindings = <&host_dial>;
         };
 
         // ╔══════════╦══════════╦══════════╦══════════╗
