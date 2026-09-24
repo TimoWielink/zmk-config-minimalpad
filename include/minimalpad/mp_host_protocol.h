@@ -41,8 +41,8 @@
  * 1: the original six commands and seven events.
  * 2: STATE grew mp_state_event.bt_profile, behind MP_CAP_BT_PROFILE.
  * 3: the pad sends ACTION_EVENT for &mac_action keys, behind MP_CAP_MAC_ACTIONS.
- * 4: SET_PROFILE's dial values drive the dial, and a dial value can scroll,
- *    behind MP_CAP_DIAL_SWAP. */
+ * 4: SET_DIAL, GET_DIAL and DIAL_STATE, a dial for each layer kept on the pad,
+ *    behind MP_CAP_LAYER_DIALS. */
 #define MP_HOST_PROTOCOL_VERSION 4
 
 /* A frame never exceeds this, so it fits the smallest negotiated ATT MTU
@@ -69,6 +69,8 @@ enum mp_host_command {
 	MP_CMD_SET_LEDS = 0x04,
 	MP_CMD_ENTER_BOOTLOADER = 0x05,
 	MP_CMD_GET_STATE = 0x06,
+	MP_CMD_SET_DIAL = 0x07,
+	MP_CMD_GET_DIAL = 0x08,
 };
 
 /* Events, pad to host. */
@@ -80,14 +82,17 @@ enum mp_host_event {
 	MP_EVT_STATE = 0x85,
 	MP_EVT_FALLBACK = 0x86,
 	MP_EVT_REJECTED = 0x87,
+	MP_EVT_DIAL_STATE = 0x88,
 };
 
 /* Guards MP_CMD_ENTER_BOOTLOADER, so a stray frame cannot reboot a pad. */
 #define MP_BOOTLOADER_MAGIC 0xB0071E00u
 
 /* Flags in mp_set_profile.flags. A flag set takes that part from the frame; a
- * flag clear puts back the pad's own colour and effect, or the keymap's own
- * dial bindings. Every SET_PROFILE describes the whole switch. */
+ * flag clear puts back the pad's own colour and effect. Every SET_PROFILE
+ * describes the whole switch. The dial flag was reserved for a dial set with
+ * the switch; no firmware acts on it, since each layer keeps its own dial
+ * (SET_DIAL). */
 #define MP_PROFILE_FLAG_SET_LEDS BIT(0)
 #define MP_PROFILE_FLAG_SET_DIAL BIT(1)
 
@@ -104,27 +109,31 @@ enum mp_host_event {
  * after revision 1 announces itself, so a host knows whether a pad will send it
  * rather than guessing from a version number. */
 #define MP_CAP_PROFILES BIT(0)
-#define MP_CAP_DIAL_SWAP BIT(1) /* SET_PROFILE's dial values drive the dial */
+#define MP_CAP_DIAL_SWAP BIT(1) /* never set: see MP_CAP_LAYER_DIALS */
 #define MP_CAP_LEDS BIT(2)
 #define MP_CAP_BT_PROFILE BIT(3) /* STATE carries bt_profile */
 #define MP_CAP_MAC_ACTIONS BIT(4) /* &mac_action keys send ACTION_EVENT */
+#define MP_CAP_LAYER_DIALS BIT(5) /* SET_DIAL, GET_DIAL and DIAL_STATE */
 
-/* What one dial value in SET_PROFILE does, one per direction of turn. It is a
- * ZMK keycode, so modifier flags in bits 31-24, a HID usage page in bits 23-16
- * and a usage id in bits 15-0, and the page says which kind:
+/* What one dial value does, in SET_DIAL and DIAL_STATE, one per direction of
+ * turn. It is a ZMK keycode, so modifier flags in bits 31-24, a HID usage page
+ * in bits 23-16 and a usage id in bits 15-0, and the page says which kind:
  *
  * - The keyboard page (0x07) or the consumer page (0x0C): the pad taps that
  *   key with those modifiers, as &kp would, once per step of the dial.
  * - MP_DIAL_PAGE_SCROLL: the pad scrolls one wheel step per step of the dial,
  *   in the direction the usage id names, with those modifiers held.
+ * - MP_DIAL_PAGE_LIGHTS: the pad changes its underglow one step, as the
+ *   &rgb_ug key the usage id names would. Modifiers are ignored.
  * - 0: the dial does nothing that way.
  *
- * A SET_PROFILE with its dial flag set and a value of any other page is
- * rejected with MP_REJECTED_OUT_OF_RANGE. Page 0x01 is HID's Generic Desktop,
- * where the wheel lives; &kp never sends it, so no key collides. */
+ * Page 0x01 is HID's Generic Desktop, where the wheel lives, and 0x08 is HID's
+ * LED page. &kp never sends either, so no key collides with them.
+ * include/dt-bindings/minimalpad/dial.h spells the same values for a keymap. */
 #define MP_DIAL_PAGE_KEYBOARD 0x07
 #define MP_DIAL_PAGE_CONSUMER 0x0C
 #define MP_DIAL_PAGE_SCROLL 0x01
+#define MP_DIAL_PAGE_LIGHTS 0x08
 
 enum mp_dial_scroll {
 	MP_DIAL_SCROLL_UP = 1,
@@ -133,9 +142,32 @@ enum mp_dial_scroll {
 	MP_DIAL_SCROLL_RIGHT = 4,
 };
 
+enum mp_dial_lights {
+	MP_DIAL_LIGHTS_BRIGHTER = 1,
+	MP_DIAL_LIGHTS_DIMMER = 2,
+	MP_DIAL_LIGHTS_HUE_UP = 3,
+	MP_DIAL_LIGHTS_HUE_DOWN = 4,
+	MP_DIAL_LIGHTS_SATURATION_UP = 5,
+	MP_DIAL_LIGHTS_SATURATION_DOWN = 6,
+	MP_DIAL_LIGHTS_FASTER = 7,
+	MP_DIAL_LIGHTS_SLOWER = 8,
+};
+
 #define MP_DIAL_MODIFIERS(value) ((uint8_t)((value) >> 24))
 #define MP_DIAL_PAGE(value) ((uint8_t)((value) >> 16))
 #define MP_DIAL_USAGE(value) ((uint16_t)(value))
+
+/* mp_set_dial.flags: set, the layer's dial is the frame's values; clear, the
+ * layer's dial goes back to its keymap's, or to the layer below's. */
+#define MP_DIAL_FLAG_SET BIT(0)
+
+/* Where a layer's dial comes from, in mp_dial_state.source. */
+enum mp_dial_source {
+	MP_DIAL_SOURCE_SET = 0, /* set with SET_DIAL, kept on the pad */
+	MP_DIAL_SOURCE_KEYMAP = 1, /* the keymap's own &host_dial values */
+	MP_DIAL_SOURCE_BELOW = 2, /* none: a turn goes to the layer below */
+	MP_DIAL_SOURCE_FIXED = 3, /* another behavior the host cannot change */
+};
 
 /* Why the pad returned to Default, in mp_fallback.reason. */
 enum mp_fallback_reason {
@@ -187,8 +219,22 @@ struct mp_set_profile {
 	uint16_t hue; /* 0-359 */
 	uint8_t saturation; /* 0-100 */
 	uint8_t brightness; /* 0-100 */
-	uint32_t dial_cw; /* a dial value, see MP_DIAL_PAGE_SCROLL */
-	uint32_t dial_ccw; /* a dial value */
+	uint32_t dial_cw; /* ignored: a layer's dial is set with SET_DIAL */
+	uint32_t dial_ccw; /* ignored */
+} __packed;
+
+/* MP_CMD_SET_DIAL: what turning the dial does on one layer, kept on the pad
+ * until changed. The pad answers with DIAL_STATE. 10 bytes of payload. */
+struct mp_set_dial {
+	uint8_t layer_id;
+	uint8_t flags; /* MP_DIAL_FLAG_SET */
+	uint32_t cw; /* a dial value */
+	uint32_t ccw; /* a dial value */
+} __packed;
+
+/* MP_CMD_GET_DIAL: the pad answers with DIAL_STATE. */
+struct mp_get_dial {
+	uint8_t layer_id;
 } __packed;
 
 /* MP_CMD_HEARTBEAT: the pad returns to Default when this window passes. */
@@ -258,6 +304,17 @@ struct mp_state_event {
 	 * A host that predates it reads the five bytes it knows and ignores this
 	 * one, which is why the field goes on the end and not beside endpoint. */
 	uint8_t bt_profile; /* 0-4, the &bt BT_SEL slot, or MP_BT_PROFILE_NONE */
+} __packed;
+
+/* MP_EVT_DIAL_STATE: one layer's dial, the answer to SET_DIAL and GET_DIAL,
+ * sent only to the host that asked. */
+struct mp_dial_state {
+	uint8_t layer_id;
+	uint8_t source; /* enum mp_dial_source */
+	uint32_t cw; /* the values that apply, 0 for MP_DIAL_SOURCE_BELOW and _FIXED */
+	uint32_t ccw;
+	uint8_t keymap_source; /* where it would come from with nothing set: _KEYMAP,
+				* _BELOW or _FIXED, so a host knows what clearing does */
 } __packed;
 
 /* MP_EVT_FALLBACK: the pad has returned to Default. */

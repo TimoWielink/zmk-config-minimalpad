@@ -85,12 +85,6 @@ static const struct mp_host_transport *const transports[] = {
 /* The layer the host last set: STATE's layer_id, the profile. */
 static zmk_keymap_layer_id_t host_layer;
 
-/* SET_PROFILE's dial values, which &host_dial on Default uses while they are set
- * (src/behaviors/host_dial.c). */
-static bool dial_set;
-static uint32_t dial_cw;
-static uint32_t dial_ccw;
-
 /*
  * Sending
  */
@@ -159,7 +153,7 @@ void mp_host_reject(const struct mp_host_transport *from, uint8_t command,
  * holds it: a reserved slot nobody has filled, or a layer Studio removed, has
  * none, and zmk_keymap_layer_to() would quietly accept it anyway.
  */
-static bool layer_in_keymap(zmk_keymap_layer_id_t id) {
+bool mp_host_layer_in_keymap(zmk_keymap_layer_id_t id) {
     if (id >= ZMK_KEYMAP_LAYERS_LEN) {
         return false;
     }
@@ -502,10 +496,6 @@ static void fall_back(enum mp_fallback_reason reason) {
 
     leds_restore();
 
-    dial_set = false;
-    dial_cw = 0;
-    dial_ccw = 0;
-
     // Only a host still listening hears this. A host whose link dropped learns it from the
     // STATE it asks for when it comes back.
     const struct mp_fallback_event event = {.reason = reason};
@@ -554,8 +544,8 @@ void mp_host_handle_hello(const struct mp_host_transport *from, const uint8_t *p
         .fw_major = MINIMALPAD_VERSION_MAJOR,
         .fw_minor = MINIMALPAD_VERSION_MINOR,
         .fw_patch = MINIMALPAD_VERSION_PATCH,
-        // Dial swap is claimed when &host_dial is compiled in, since it is what makes
-        // SET_PROFILE's dial values drive the dial.
+        // Dial swap stays clear: each layer's dial is set with SET_DIAL instead, and is
+        // claimed as layer dials when &host_dial is compiled in.
         // The Bluetooth slot is claimed on every build, including one without Bluetooth, where
         // the byte can only say MP_BT_PROFILE_NONE: the bit promises the host that STATE
         // carries the field, not that the pad has a slot to report.
@@ -563,7 +553,7 @@ void mp_host_handle_hello(const struct mp_host_transport *from, const uint8_t *p
         .caps = MP_CAP_PROFILES | MP_CAP_BT_PROFILE |
                 (IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW) ? MP_CAP_LEDS : 0) |
                 (IS_ENABLED(CONFIG_MINIMALPAD_MAC_ACTION) ? MP_CAP_MAC_ACTIONS : 0) |
-                (IS_ENABLED(CONFIG_MINIMALPAD_HOST_DIAL) ? MP_CAP_DIAL_SWAP : 0),
+                (IS_ENABLED(CONFIG_MINIMALPAD_HOST_DIAL) ? MP_CAP_LAYER_DIALS : 0),
         .layer_count = ZMK_KEYMAP_LAYERS_LEN,
         .free_layers = free_layer_slots(),
     };
@@ -576,31 +566,12 @@ void mp_host_handle_hello(const struct mp_host_transport *from, const uint8_t *p
     mp_host_host_arrived(from);
 }
 
-/* host-protocol.md, "Dial values": a key, a scroll, or nothing. */
-static bool dial_value_valid(uint32_t value) {
-    if (value == 0) {
-        return true;
-    }
-
-    switch (MP_DIAL_PAGE(value)) {
-    case MP_DIAL_PAGE_KEYBOARD:
-    case MP_DIAL_PAGE_CONSUMER:
-        return true;
-    case MP_DIAL_PAGE_SCROLL:
-        return MP_DIAL_USAGE(value) >= MP_DIAL_SCROLL_UP &&
-               MP_DIAL_USAGE(value) <= MP_DIAL_SCROLL_RIGHT;
-    default:
-        return false;
-    }
-}
-
 void mp_host_handle_set_profile(const struct mp_host_transport *from, const uint8_t *payload) {
     struct mp_set_profile cmd;
     memcpy(&cmd, payload, sizeof(cmd));
 
     const uint16_t hue = sys_le16_to_cpu(cmd.hue);
     const bool set_leds = cmd.flags & MP_PROFILE_FLAG_SET_LEDS;
-    const bool set_dial = cmd.flags & MP_PROFILE_FLAG_SET_DIAL;
 
     // host-protocol.md, "Validation": the whole frame is checked before any part of it is
     // applied, so an app switch cannot half-apply, and a bad one is answered with REJECTED.
@@ -611,15 +582,7 @@ void mp_host_handle_set_profile(const struct mp_host_transport *from, const uint
         return;
     }
 
-    const uint32_t cw = sys_le32_to_cpu(cmd.dial_cw);
-    const uint32_t ccw = sys_le32_to_cpu(cmd.dial_ccw);
-    if (set_dial && !(dial_value_valid(cw) && dial_value_valid(ccw))) {
-        LOG_WRN("Rejecting SET_PROFILE with dial values 0x%08x/0x%08x", cw, ccw);
-        mp_host_reject(from, MP_CMD_SET_PROFILE, MP_REJECTED_OUT_OF_RANGE);
-        return;
-    }
-
-    if (!layer_in_keymap(cmd.layer_id)) {
+    if (!mp_host_layer_in_keymap(cmd.layer_id)) {
         LOG_WRN("Rejecting SET_PROFILE for layer id %d, which the keymap does not hold",
                 cmd.layer_id);
         mp_host_reject(from, MP_CMD_SET_PROFILE, MP_REJECTED_UNKNOWN_LAYER);
@@ -640,15 +603,6 @@ void mp_host_handle_set_profile(const struct mp_host_transport *from, const uint
         leds_restore();
     }
 
-    if (set_dial) {
-        dial_cw = cw;
-        dial_ccw = ccw;
-        dial_set = true;
-    } else {
-        dial_set = false;
-        dial_cw = 0;
-        dial_ccw = 0;
-    }
 
     arm_fallback();
     request_state(false);
@@ -800,16 +754,6 @@ ZMK_SUBSCRIPTION(minimalpad_host, zmk_layer_state_changed);
 ZMK_SUBSCRIPTION(minimalpad_host, zmk_endpoint_changed);
 ZMK_SUBSCRIPTION(minimalpad_host, zmk_ble_active_profile_changed);
 ZMK_SUBSCRIPTION(minimalpad_host, zmk_activity_state_changed);
-
-bool mp_host_dial_keycodes(uint32_t *clockwise, uint32_t *counter_clockwise) {
-    if (!dial_set) {
-        return false;
-    }
-
-    *clockwise = dial_cw;
-    *counter_clockwise = dial_ccw;
-    return true;
-}
 
 static int host_init(void) {
     LOG_INF("Minimalpad firmware %d.%d.%d", MINIMALPAD_VERSION_MAJOR, MINIMALPAD_VERSION_MINOR,

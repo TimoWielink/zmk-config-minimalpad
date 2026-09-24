@@ -45,7 +45,7 @@ struct command {
  * to the spec's numbers, so a header that drifts from the spec fails the build
  * instead of every frame on the pad.
  *
- * HELLO and GET_STATE change nothing, so any bonded host gets an answer
+ * HELLO, GET_STATE and GET_DIAL change nothing, so any bonded host gets an answer
  * (host-protocol.md, "Which host is in charge").
  */
 static const struct command commands[] = {
@@ -56,6 +56,10 @@ static const struct command commands[] = {
     {MP_CMD_ENTER_BOOTLOADER, sizeof(struct mp_enter_bootloader), true,
      mp_host_handle_enter_bootloader},
     {MP_CMD_GET_STATE, 0, false, mp_host_handle_get_state},
+#if IS_ENABLED(CONFIG_MINIMALPAD_HOST_DIAL)
+    {MP_CMD_SET_DIAL, sizeof(struct mp_set_dial), true, mp_host_handle_set_dial},
+    {MP_CMD_GET_DIAL, sizeof(struct mp_get_dial), false, mp_host_handle_get_dial},
+#endif
 };
 
 BUILD_ASSERT(sizeof(struct mp_host_frame_header) == MP_HOST_HEADER_LEN);

@@ -1,17 +1,16 @@
 /*
- * Minimalpad host module: &host_dial, the dial Studio can change per profile
+ * Minimalpad host module: &host_dial, a dial each layer can set
  *
- * Bound as a sensor binding on Default. Profile layers carry no dial binding
- * of their own, so ZMK looks down to Default's while a profile is active, and
- * BT + LED keeps its own dial because it defines one.
- *
- * While the last SET_PROFILE carried dial values (mp_host_dial_keycodes()), a
- * turn does what they say: tap a key, or scroll, with the modifiers they name
- * (host-protocol.md, "Dial values"). Otherwise, and whenever the pad falls back
- * to Default, it does what its own bindings say, as ZMK's sensor-rotate would.
+ * Bound as a sensor binding on Default and on Connections & LEDs. A turn does
+ * what mp_host_dial_resolve() says for the layer that answered (src/host/dial.c):
+ * a value MinimalPad Studio set for that layer or an active layer above it, such
+ * as a profile layer with no binding of its own, or else the clockwise and
+ * counter-clockwise values the keymap gives this binding. A value taps a key,
+ * scrolls, or steps the underglow, with the modifiers it names
+ * (host-protocol.md, "Dial values").
  *
  * Threading: ZMK raises sensor events on the system work queue, the queue the
- * host core (host.c) runs on, so the dial values cannot change under a turn.
+ * host core runs on, so a layer's dial cannot change under a turn.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -26,6 +25,7 @@
 #include <zephyr/logging/log.h>
 
 #include <dt-bindings/zmk/hid_usage_pages.h>
+#include <dt-bindings/zmk/rgb.h>
 #include <zmk/behavior.h>
 #include <zmk/behavior_queue.h>
 #include <zmk/endpoints.h>
@@ -41,8 +41,6 @@ LOG_MODULE_DECLARE(minimalpad_host, CONFIG_MINIMALPAD_HOST_LOG_LEVEL);
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 
 struct host_dial_config {
-    struct zmk_behavior_binding cw_binding;
-    struct zmk_behavior_binding ccw_binding;
     int tap_ms;
 };
 
@@ -148,6 +146,30 @@ static void tap(struct zmk_behavior_binding_event *event, struct zmk_behavior_bi
     }
 }
 
+/* The &rgb_ug command each lighting step is, so a step does exactly what that key does. */
+static int lights_command(uint16_t usage) {
+    switch (usage) {
+    case MP_DIAL_LIGHTS_BRIGHTER:
+        return RGB_BRI_CMD;
+    case MP_DIAL_LIGHTS_DIMMER:
+        return RGB_BRD_CMD;
+    case MP_DIAL_LIGHTS_HUE_UP:
+        return RGB_HUI_CMD;
+    case MP_DIAL_LIGHTS_HUE_DOWN:
+        return RGB_HUD_CMD;
+    case MP_DIAL_LIGHTS_SATURATION_UP:
+        return RGB_SAI_CMD;
+    case MP_DIAL_LIGHTS_SATURATION_DOWN:
+        return RGB_SAD_CMD;
+    case MP_DIAL_LIGHTS_FASTER:
+        return RGB_SPI_CMD;
+    case MP_DIAL_LIGHTS_SLOWER:
+        return RGB_SPD_CMD;
+    default:
+        return -1;
+    }
+}
+
 static int host_dial_process(struct zmk_behavior_binding *binding,
                              struct zmk_behavior_binding_event event,
                              enum behavior_sensor_binding_process_mode mode) {
@@ -169,20 +191,30 @@ static int host_dial_process(struct zmk_behavior_binding *binding,
     const bool clockwise = steps > 0;
     steps = abs(steps);
 
-    uint32_t host_cw;
-    uint32_t host_ccw;
-    if (!mp_host_dial_keycodes(&host_cw, &host_ccw)) {
-        tap(&event, clockwise ? cfg->cw_binding : cfg->ccw_binding, steps, cfg->tap_ms);
-        return ZMK_BEHAVIOR_OPAQUE;
+    uint32_t value;
+    if (!mp_host_dial_resolve(event.layer, clockwise, &value)) {
+        return ZMK_BEHAVIOR_TRANSPARENT;
     }
-
-    const uint32_t value = clockwise ? host_cw : host_ccw;
-    LOG_DBG("dial %s %d steps: 0x%08x", clockwise ? "cw" : "ccw", steps, value);
+    LOG_DBG("dial %s %d steps on layer %d: 0x%08x", clockwise ? "cw" : "ccw", steps, event.layer,
+            value);
 
     switch (MP_DIAL_PAGE(value)) {
     case MP_DIAL_PAGE_SCROLL:
         scroll(value, steps);
         break;
+    case MP_DIAL_PAGE_LIGHTS: {
+#if IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW)
+        const int command = lights_command(MP_DIAL_USAGE(value));
+        if (command >= 0) {
+            const struct zmk_behavior_binding lights = {
+                .behavior_dev = DEVICE_DT_NAME(DT_NODELABEL(rgb_ug)),
+                .param1 = command,
+            };
+            tap(&event, lights, steps, cfg->tap_ms);
+        }
+#endif
+        break;
+    }
     case MP_DIAL_PAGE_KEYBOARD:
     case MP_DIAL_PAGE_CONSUMER: {
         const struct zmk_behavior_binding key = {
@@ -193,11 +225,11 @@ static int host_dial_process(struct zmk_behavior_binding *binding,
         break;
     }
     default:
-        // 0, the dial doing nothing this way. host.c rejects anything else.
+        // 0, the dial doing nothing this way. dial.c accepts nothing else.
         break;
     }
 
-    // Opaque even when doing nothing: the profile set the dial, so no layer below answers.
+    // Opaque even when doing nothing: this layer's dial was chosen, so no layer below answers.
     return ZMK_BEHAVIOR_OPAQUE;
 }
 
@@ -206,19 +238,8 @@ static const struct behavior_driver_api host_dial_driver_api = {
     .sensor_binding_process = host_dial_process,
 };
 
-#define _TRANSFORM_ENTRY(idx, node)                                                                \
-    {                                                                                              \
-        .behavior_dev = DEVICE_DT_NAME(DT_INST_PHANDLE_BY_IDX(node, bindings, idx)),               \
-        .param1 = COND_CODE_0(DT_INST_PHA_HAS_CELL_AT_IDX(node, bindings, idx, param1), (0),       \
-                              (DT_INST_PHA_BY_IDX(node, bindings, idx, param1))),                  \
-        .param2 = COND_CODE_0(DT_INST_PHA_HAS_CELL_AT_IDX(node, bindings, idx, param2), (0),       \
-                              (DT_INST_PHA_BY_IDX(node, bindings, idx, param2))),                  \
-    }
-
 #define HOST_DIAL_INST(n)                                                                          \
     static const struct host_dial_config host_dial_config_##n = {                                  \
-        .cw_binding = _TRANSFORM_ENTRY(0, n),                                                      \
-        .ccw_binding = _TRANSFORM_ENTRY(1, n),                                                     \
         .tap_ms = DT_INST_PROP(n, tap_ms),                                                         \
     };                                                                                             \
     static struct host_dial_data host_dial_data_##n = {};                                          \

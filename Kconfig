@@ -66,15 +66,16 @@ config MINIMALPAD_MAC_ACTION
       advertises MP_CAP_MAC_ACTIONS in HELLO_ACK when this is on.
 
 config MINIMALPAD_HOST_DIAL
-    bool "The &host_dial sensor binding, which follows Studio's profile"
+    bool "A dial for each layer, set from Studio and kept on the pad"
     depends on DT_HAS_MINIMALPAD_BEHAVIOR_HOST_DIAL_ENABLED
     default y
     help
-      A dial bound to &host_dial does what the active profile's dial values
-      say, as SET_PROFILE set them: tap a key, or scroll, with modifiers.
-      Without them, and after the pad falls back to Default, it taps its own
-      bindings. The build advertises MP_CAP_DIAL_SWAP in HELLO_ACK when this
-      is on. A scroll needs ZMK_POINTING for the pad's mouse report.
+      A dial bound to &host_dial does what its layer's dial value says: tap a
+      key, scroll, or step the underglow, with modifiers. Studio sets a
+      layer's value with SET_DIAL and the pad keeps it in its settings;
+      otherwise the keymap's clockwise and counter-clockwise values apply.
+      The build advertises MP_CAP_LAYER_DIALS in HELLO_ACK when this is on.
+      A scroll needs ZMK_POINTING for the pad's mouse report.
 
 config MINIMALPAD_HOST_DIAL_SCROLL_STEP
     int "Wheel steps per step of the dial, for a scroll"

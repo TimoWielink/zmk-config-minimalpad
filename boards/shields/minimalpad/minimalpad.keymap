@@ -3,9 +3,10 @@
 #include <dt-bindings/zmk/bt.h>
 #include <dt-bindings/zmk/rgb.h>
 #include <dt-bindings/zmk/outputs.h>
+#include <dt-bindings/minimalpad/dial.h>
 
 #define DEFAULT_LAYER 0
-#define BTLED 1
+#define CONNECTIONS 1
 
 / {
     sensors {
@@ -15,23 +16,22 @@
     };
 
     behaviors {
-        // Encoder rotation → RGB brightness (used on the BT+LED layer).
-        // inc_dec_kp only wraps key presses, so RGB needs a dedicated
-        // sensor-rotate behavior. CW = brighter, CCW = dimmer.
-        rgb_encoder: rgb_encoder {
-            compatible = "zmk,behavior-sensor-rotate";
-            #sensor-binding-cells = <0>;
-            bindings = <&rgb_ug RGB_BRI>, <&rgb_ug RGB_BRD>;
-        };
-
-        // The dial on Default, and so in every profile, which defines no dial of its own.
-        // MinimalPad Studio can give each profile its own dial action: a key or a scroll,
-        // with modifiers. Without Studio, and when the pad falls back to Default, it
-        // changes the volume. BT + LED keeps its own dial.
-        host_dial: host_dial {
+        // The dial. Each layer's turn can be changed in MinimalPad Studio for Mac, which
+        // keeps the choice on the pad: a key, a scroll or a lighting step, with modifiers.
+        // Until then it does what these say. A layer with no dial of its own, such as an
+        // app profile, gets the dial of the layer below.
+        dial_volume: dial_volume {
             compatible = "minimalpad,behavior-host-dial";
             #sensor-binding-cells = <0>;
-            bindings = <&kp C_VOL_UP>, <&kp C_VOL_DN>;
+            clockwise = <C_VOL_UP>;
+            counter-clockwise = <C_VOL_DN>;
+        };
+
+        dial_lights: dial_lights {
+            compatible = "minimalpad,behavior-host-dial";
+            #sensor-binding-cells = <0>;
+            clockwise = <DIAL_LIGHTS_BRIGHTER>;
+            counter-clockwise = <DIAL_LIGHTS_DIMMER>;
         };
 
         // Mac action key: does nothing on the pad, tells MinimalPad Studio for Mac
@@ -56,32 +56,32 @@
         // ║   AREA   ║  TOOLS   ║  BRI −   ║  BRI +   ║
         // ╠══════════╬══════════╬══════════╬══════════╣
         // ║   PREV   ║  PLAY/   ║   NEXT   ║ [HOLD]→  ║  Media + layer hold
-        // ║  TRACK   ║  PAUSE   ║  TRACK   ║ BT + LED ║
+        // ║  TRACK   ║  PAUSE   ║  TRACK   ║ CONNECT. ║
         // ╠══════════╩══════════╩══════════╩══════════╣
         // ║           MUTE  (encoder button)          ║
         // ╚═══════════════════════════════════════════╝
-        //   Encoder rotation: Volume Up / Volume Down, or the active profile's dial action
+        //   Encoder rotation: Volume Up / Volume Down, unless changed in Studio
         //   The shortcuts are macOS ones: Cmd Space, Ctrl Up, Ctrl Cmd Space,
         //   Ctrl Cmd Q, Cmd C / V / Z, Cmd Shift Z, Cmd Shift 4 and Cmd Shift 5.
-        //   Hold the BOTTOM-RIGHT key to reach the BT + LED layer.
+        //   Hold the BOTTOM-RIGHT key to reach the Connections & LEDs layer.
         default_layer {
             display-name = "Default";
             bindings = <
                 &kp LG(SPACE)      &kp LC(UP)         &kp LC(LG(SPACE))  &kp LC(LG(Q))
                 &kp LG(C)          &kp LG(V)          &kp LG(Z)          &kp LG(LS(Z))
                 &kp LG(LS(N4))     &kp LG(LS(N5))     &kp C_BRI_DN       &kp C_BRI_UP
-                &kp C_PREV         &kp C_PP           &kp C_NEXT         &mo BTLED
+                &kp C_PREV         &kp C_PP           &kp C_NEXT         &mo CONNECTIONS
                 &kp C_MUTE
             >;
-            sensor-bindings = <&host_dial>;
+            sensor-bindings = <&dial_volume>;
         };
 
         // ╔══════════╦══════════╦══════════╦══════════╗
         // ║BLUETOOTH ║BLUETOOTH ║BLUETOOTH ║BLUETOOTH ║  Paired devices 1-4
         // ║    1     ║    2     ║    3     ║    4     ║
         // ╠══════════╬══════════╬══════════╬══════════╣
-        // ║BLUETOOTH ║  CLEAR   ║   USE    ║   USE    ║  Device 5, forget this device's
-        // ║    5     ║ PAIRING  ║   USB    ║BLUETOOTH ║  pairing, choose the connection
+        // ║BLUETOOTH ║   USE    ║   USE    ║  CLEAR   ║  Device 5, choose the connection,
+        // ║    5     ║   USB    ║BLUETOOTH ║ PAIRING  ║  forget this device's pairing
         // ╠══════════╬══════════╬══════════╬══════════╣
         // ║  LIGHTS  ║   NEXT   ║  COLOUR  ║  COLOUR  ║  Lights
         // ║  ON/OFF  ║  EFFECT  ║    −     ║    +     ║
@@ -92,25 +92,27 @@
         // ║      LIGHTS ON/OFF  (encoder button)      ║
         // ╚═══════════════════════════════════════════╝
         //   Active while the bottom-right key is held (from the Default layer).
-        //   Encoder rotation here: light brightness up / down.
+        //   Encoder rotation here: light brightness up / down, unless changed in Studio.
         //   USE USB and USE BLUETOOTH pick where keys go. The pad answers MinimalPad
         //   Studio only on that connection, so choose USB to edit over a cable.
-        btled_layer {
-            display-name = "BT + LED";
+        //   CLEAR PAIRING sits at the end of its row, away from the device keys, so it is
+        //   not pressed by mistake.
+        connections_layer {
+            display-name = "Connections & LEDs";
             bindings = <
                 &bt BT_SEL 0       &bt BT_SEL 1       &bt BT_SEL 2       &bt BT_SEL 3
-                &bt BT_SEL 4       &bt BT_CLR         &out OUT_USB       &out OUT_BLE
+                &bt BT_SEL 4       &out OUT_USB       &out OUT_BLE       &bt BT_CLR
                 &rgb_ug RGB_TOG    &rgb_ug RGB_EFF    &rgb_ug RGB_HUD    &rgb_ug RGB_HUI
                 &rgb_ug RGB_BRD    &rgb_ug RGB_BRI    &none              &trans
                 &rgb_ug RGB_TOG
             >;
-            sensor-bindings = <&rgb_encoder>;
+            sensor-bindings = <&dial_lights>;
         };
 
         // Reserved slots, where MinimalPad Studio for Mac adds profile layers with ZMK
-        // Studio's add_layer: 14 of them, for 16 layers with Default and BT + LED. Only
-        // builds with ZMK Studio compile them in; without it the keymap is the two layers
-        // above.
+        // Studio's add_layer: 14 of them, for 16 layers with Default and Connections &
+        // LEDs. Only builds with ZMK Studio compile them in; without it the keymap is the
+        // two layers above.
         extra_1 {
             status = "reserved";
         };
