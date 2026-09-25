@@ -65,6 +65,26 @@ config MINIMALPAD_MAC_ACTION
       opening an app. Without Studio running the key is inert. The build
       advertises MP_CAP_MAC_ACTIONS in HELLO_ACK when this is on.
 
+config MINIMALPAD_HOST_DIAL
+    bool "A dial for each layer, set from Studio and kept on the pad"
+    depends on DT_HAS_MINIMALPAD_BEHAVIOR_HOST_DIAL_ENABLED
+    default y
+    help
+      A dial bound to &host_dial does what its layer's dial value says: tap a
+      key, scroll, or step the underglow, with modifiers. Studio sets a
+      layer's value with SET_DIAL and the pad keeps it in its settings;
+      otherwise the keymap's clockwise and counter-clockwise values apply.
+      The build advertises MP_CAP_LAYER_DIALS in HELLO_ACK when this is on.
+      A scroll needs ZMK_POINTING for the pad's mouse report.
+
+config MINIMALPAD_HOST_DIAL_SCROLL_STEP
+    int "Wheel steps per step of the dial, for a scroll"
+    depends on MINIMALPAD_HOST_DIAL
+    range 1 20
+    default 1
+    help
+      One step of the dial is one wheel click of an ordinary mouse at 1.
+
 config MINIMALPAD_HOST_LEDS_FORCE_SOLID
     bool "Show a host colour with the solid effect"
     depends on ZMK_RGB_UNDERGLOW

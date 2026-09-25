@@ -343,7 +343,7 @@ static int leds_event_listener(const zmk_event_t *eh) {
 
     // Handled here rather than on work: ZMK's activity listener raises this before the keymap
     // sees the key press that woke the pad, so a key that changes the underglow, such as
-    // brightness on the BT + LED layer, changes the pad's colour and not a dimmed step.
+    // brightness on the Connections & LEDs layer, changes the pad's colour and not a dimmed step.
     if (ev->state == ZMK_ACTIVITY_ACTIVE) {
         wake();
     } else {

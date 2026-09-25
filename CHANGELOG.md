@@ -2,6 +2,15 @@
 
 What changed in each version of the MinimalPad firmware. How versions are numbered and released is in [docs/releasing.md](docs/releasing.md). A version's section here becomes the description of its GitHub Release, so write it for the people who will flash it.
 
+## 0.6.0
+
+- You choose what the dial does, on every layer. In MinimalPad Studio for Mac, from its next release, pick a layer or an app profile and choose what turning the dial does: volume, scroll up and down, scroll left and right, zoom, light brightness or colour, or any two keys, one for each direction. A scroll can hold modifier keys, which is how many apps pan, zoom or orbit with a wheel. The pad keeps your choice, so it works without Studio running, on any computer.
+- An app profile you haven't given a dial of its own uses Default's.
+- The BT + LED layer is now called **Connections & LEDs**. It's still opened by holding the bottom-right key.
+- On that layer, **Clear pairing** has moved to the end of the second row, after **Use USB** and **Use Bluetooth**, so it's not pressed by mistake when you reach for Bluetooth device 5. A key you changed there yourself stays as you set it.
+- The pad now also reports itself as a mouse wheel, which is how the dial scrolls. Nothing moves the pointer.
+- Nothing else changes: your keys, layers, profiles and lights are as you left them.
+
 ## 0.5.0
 
 - A key can now open a Mac app. MinimalPad Studio for Mac, from its next release, offers "Open app" for any key. The pad tells Studio which key was pressed and Studio opens the app, or brings it forward if it's already open. It works only while Studio is running: without it, the key does nothing.

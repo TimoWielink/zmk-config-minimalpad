@@ -85,6 +85,16 @@ void mp_host_handle_heartbeat(const struct mp_host_transport *from, const uint8_
 void mp_host_handle_set_leds(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_enter_bootloader(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_get_state(const struct mp_host_transport *from, const uint8_t *payload);
+/* src/host/dial.c, built with CONFIG_MINIMALPAD_HOST_DIAL. */
+/*
+ * The dial value a turn gets when ZMK gave it to the &host_dial binding on
+ * `answering_layer`: a value set for an active layer above it, then one set for
+ * that layer, then its keymap's. Returns false when none applies. Call from the
+ * system work queue.
+ */
+bool mp_host_dial_resolve(uint8_t answering_layer, bool clockwise, uint32_t *value);
+void mp_host_handle_set_dial(const struct mp_host_transport *from, const uint8_t *payload);
+void mp_host_handle_get_dial(const struct mp_host_transport *from, const uint8_t *payload);
 
 /*
  * Answers a dropped command with REJECTED, to the host that sent it only. A
@@ -120,8 +130,7 @@ void mp_host_host_arrived(const struct mp_host_transport *transport);
 void mp_host_leds_changed(void);
 
 /*
- * The dial keycodes the last SET_PROFILE carried with its dial flag set, for
- * the dial swap still to come. Returns false when the pad's own dial binding
- * applies.
+ * Whether a layer id names a layer the keymap holds now, as opposed to a
+ * reserved slot no layer has taken.
  */
-bool mp_host_dial_keycodes(uint32_t *clockwise, uint32_t *counter_clockwise);
+bool mp_host_layer_in_keymap(uint8_t id);

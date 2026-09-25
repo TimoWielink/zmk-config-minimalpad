@@ -1,6 +1,6 @@
 # MinimalPad host module
 
-A small addition to the pad's firmware for MinimalPad Studio for Mac. The Bluetooth channel and Profile switching have run on a pad. Firmware 0.3.0 adds USB Profile control; that new route and Profile colour still need their physical-pad check after flashing. Firmware 0.4.0 adds the Bluetooth device to the pad's state report, which needs the same check. Firmware 0.5.0 adds the Mac action key, which tells Studio when it goes down or up so Studio can open an app.
+A small addition to the pad's firmware for MinimalPad Studio for Mac. The Bluetooth channel and Profile switching have run on a pad. Firmware 0.3.0 adds USB Profile control; that new route and Profile colour still need their physical-pad check after flashing. Firmware 0.4.0 adds the Bluetooth device to the pad's state report, which needs the same check. Firmware 0.5.0 adds the Mac action key, which tells Studio when it goes down or up so Studio can open an app. Firmware 0.6.0 gives every layer a dial Studio can set and the pad keeps (`SET_DIAL`, `GET_DIAL`): `&host_dial` taps a key, scrolls or steps the underglow.
 
 ## What it does
 
@@ -29,6 +29,10 @@ Without Studio running, nothing changes: the pad behaves exactly as its keymap s
 | `src/host/transport_usb.c` | Shares ZMK Studio's one USB serial stream without adding another port |
 | `src/behaviors/mac_action.c` | The `&mac_action` key: sends `ACTION_EVENT` when it goes down or up, and does nothing else |
 | `dts/bindings/behaviors/minimalpad,behavior-mac-action.yaml` | Tells the keymap and ZMK Studio what `&mac_action` is and that it takes one number |
+| `src/behaviors/host_dial.c` | `&host_dial`, the dial on Default and Connections & LEDs: taps a key, scrolls or steps the underglow, with modifiers, as its layer's dial value says |
+| `src/host/dial.c` | Each layer's dial: `SET_DIAL` and `GET_DIAL`, saving values in the pad's settings, and which value a turn gets |
+| `dts/bindings/behaviors/minimalpad,behavior-host-dial.yaml` | Tells the keymap what `&host_dial` is and that it takes clockwise and counter-clockwise values until Studio sets others |
+| `include/dt-bindings/minimalpad/dial.h` | Names for dial values that are not keys, such as `DIAL_SCROLL_UP` and `DIAL_LIGHTS_BRIGHTER`, for the keymap |
 | `dts/bindings/vendor-prefixes.txt` | Registers the `minimalpad` vendor prefix, so the build does not warn about it |
 | `include/minimalpad/mp_host_protocol.h` | The wire format, copied byte for byte from MinimalPad Studio for Mac |
 | `include/minimalpad/host.h` | How those three files fit together |
@@ -36,7 +40,7 @@ Without Studio running, nothing changes: the pad behaves exactly as its keymap s
 | `boards/shields/minimalpad/minimalpad.keymap` | 14 reserved layer slots instead of 3, so there is room for profiles |
 | `.github/workflows/build.yml` | Builds also run when only module code changes |
 
-The firmware, `minimalpad_with_studio`, has 16 layers: Default, BT + LED and 14 free for profiles. The reserved slots are only compiled into builds with ZMK Studio, and since 0.3.0 that is the only build.
+The firmware, `minimalpad_with_studio`, has 16 layers: Default, Connections & LEDs and 14 free for profiles. The reserved slots are only compiled into builds with ZMK Studio, and since 0.3.0 that is the only build.
 
 ## How it works
 
@@ -50,11 +54,12 @@ That version byte is frozen at `0x01` and will not change: raising it would make
 | Commands, Mac to pad | Events, pad to Mac |
 | --- | --- |
 | `HELLO`: who are you? | `HELLO_ACK`: firmware version, capabilities, free layers |
-| `SET_PROFILE`: switch layer, and optionally colour and dial | `STATE`: active profile, top layer, connection, battery, LEDs, Bluetooth device |
+| `SET_PROFILE`: switch layer, and optionally colour | `STATE`: active profile, top layer, connection, battery, LEDs, Bluetooth device |
 | `HEARTBEAT`: still here; `0` means let go now | `FALLBACK`: back on Default, and why |
 | `SET_LEDS`: colour preview | `REJECTED`: a command was refused, and why |
 | `GET_STATE`: what are you doing? | `ACTION_EVENT`: a Mac action key went down or up, for Studio to act on |
 | `ENTER_BOOTLOADER`: reboot into flash mode, guarded by a magic number | `KEY_EVENT`, `DIAL_EVENT`: reserved for later |
+| `SET_DIAL`, `GET_DIAL`: one layer's dial, kept on the pad | `DIAL_STATE`: one layer's dial, and where it comes from |
 
 Rules the firmware keeps:
 
@@ -93,6 +98,8 @@ Add any of these to `boards/shields/minimalpad/minimalpad.conf`:
 | `CONFIG_MINIMALPAD_HOST_USB_TX_BUFFER_SIZE` | `512` | Bytes reserved while Studio and host replies share USB |
 | `CONFIG_MINIMALPAD_HOST_HEARTBEAT_DEFAULT_TIMEOUT` | `6` | Seconds before falling back, until Studio's first heartbeat sets its own |
 | `CONFIG_MINIMALPAD_MAC_ACTION` | `y` | The `&mac_action` key. Set `n` to build without it; the pad then no longer claims Mac actions in `HELLO_ACK` |
+| `CONFIG_MINIMALPAD_HOST_DIAL` | `y` | `&host_dial` and each layer's dial. Set `n` to build without it; the pad then no longer claims layer dials in `HELLO_ACK` |
+| `CONFIG_MINIMALPAD_HOST_DIAL_SCROLL_STEP` | `1` | Wheel steps per step of the dial when a profile's dial scrolls |
 | `CONFIG_MINIMALPAD_HOST_LEDS_FORCE_SOLID` | `y` | Show Profile HSB exactly: Breathe generates brightness, while Spectrum and Swirl generate hue |
 | `CONFIG_MINIMALPAD_HOST_LOG_LEVEL_DBG` | off | Log what the module decides, with the `zmk-usb-logging` snippet |
 
