@@ -2,6 +2,12 @@
 
 What changed in each version of the MinimalPad firmware. How versions are numbered and released is in [docs/releasing.md](docs/releasing.md). A version's section here becomes the description of its GitHub Release, so write it for the people who will flash it.
 
+## 0.6.1
+
+- The lights now show the colour you pick. Red and green were swapped on the way to the LEDs, so an orange profile lit the pad lime green, violet showed as blue and red as green. Blue was right.
+- The pad's own colour shows as chosen too, so it may look different after flashing. Set it again from the Connections & LEDs layer if you'd like it back as it was.
+- Nothing else changes: your keys, layers, profiles and dial are as you left them, and you don't need to pair the pad again.
+
 ## 0.6.0
 
 - You choose what the dial does, on every layer. In MinimalPad Studio for Mac, from its next release, pick a layer or an app profile and choose what turning the dial does: volume, scroll up and down, scroll left and right, zoom, light brightness or colour, or any two keys, one for each direction. A scroll can hold modifier keys, which is how many apps pan, zoom or orbit with a wheel. The pad keeps your choice, so it works without Studio running, on any computer.
