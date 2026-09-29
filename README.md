@@ -8,7 +8,7 @@ ZMK firmware for the MinimalPad macropad. Get the latest version for your pad he
 
 - **Website:** [minimalmacropad.com](https://minimalmacropad.com)
 - **MinimalPad Studio, web version:** [studio.minimalmacropad.com](https://studio.minimalmacropad.com), in Chrome or Edge
-- **MinimalPad Studio for Mac:** [download it](https://downloads.minimalmacropad.com/mac/latest), for macOS 14 or newer
+- **MinimalPad Studio for Mac:** [minimalmacropad.com/minimalpad-studio-mac](https://www.minimalmacropad.com/minimalpad-studio-mac), for macOS 14 or newer
 - **Docs:** [docs.minimalmacropad.com](https://docs.minimalmacropad.com)
 
 ## Change your keys
