@@ -8,22 +8,23 @@
 # board: [ "nice_nano_v2" ]
 # shield: [ "corne_left", "corne_right" ]
 # include:
-#   - board: bdn9_rev2
-#   - board: nice_nano_v2
-#     shield: reviung41
-#   - board: nice_nano_v2
-#     shield: corne_left
-#     snippet: studio-rpc-usb-uart
-#     cmake-args: -DCONFIG_ZMK_STUDIO=y
-#     artifact-name: corne_left_with_studio
-#
----
-include:
-  # One firmware, always with ZMK Studio, which MinimalPad Studio needs. The artifact
-  # name is the .uf2 file's name, and a release adds the version to it.
-  # .github/release-notes.md names the file, so change the two together.
+  # This branch builds one thing: the settings-reset image. It is kept apart from main
+  # on purpose, because a release publishes every .uf2 the build makes, and this one
+  # must never sit beside the firmware one wrong click away.
+  #
+  # It erases the pad's saved settings: every key changed in Studio, layer names, the
+  # dials and lights set from Studio, and every Bluetooth pairing. Flash it, then flash
+  # minimalpad_with_studio straight after. On its own it leaves a pad that does nothing.
+  #
+  # `nrf52840-nosd` is not optional. The firmware is built with that snippet, which puts
+  # storage_partition at 0xd4000. A reset built without it erases wherever the stock
+  # layout puts storage, which is not where the pad's settings are: it would report
+  # success and change nothing.
+  #
+  # The image depends on the flash layout, not on the firmware version, so it only needs
+  # building again if the partitions move. The shield turns ZMK_BLE off, so the host
+  # module and the LED fade configure themselves out.
   - board: nice_nano//zmk
-    shield: minimalpad
-    snippet: studio-rpc-usb-uart nrf52840-nosd
-    cmake-args: -DCONFIG_ZMK_STUDIO=y
-    artifact-name: minimalpad_with_studio
+    shield: settings_reset
+    snippet: nrf52840-nosd
+    artifact-name: minimalpad_settings_reset
