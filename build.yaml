@@ -8,12 +8,23 @@
 # board: [ "nice_nano_v2" ]
 # shield: [ "corne_left", "corne_right" ]
 # include:
+#   - board: bdn9_rev2
+#   - board: nice_nano_v2
+#     shield: reviung41
+#   - board: nice_nano_v2
+#     shield: corne_left
+#     snippet: studio-rpc-usb-uart
+#     cmake-args: -DCONFIG_ZMK_STUDIO=y
+#     artifact-name: corne_left_with_studio
+#
+---
+include:
   # This branch builds one thing: the settings-reset image. It is kept apart from main
   # on purpose, because a release publishes every .uf2 the build makes, and this one
   # must never sit beside the firmware one wrong click away.
   #
   # It erases the pad's saved settings: every key changed in Studio, layer names, the
-  # dials and lights set from Studio, and every Bluetooth pairing. Flash it, then flash
+  # dials, the lighting, and every Bluetooth pairing. Flash it, then flash
   # minimalpad_with_studio straight after. On its own it leaves a pad that does nothing.
   #
   # `nrf52840-nosd` is not optional. The firmware is built with that snippet, which puts
