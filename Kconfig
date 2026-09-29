@@ -85,6 +85,19 @@ config MINIMALPAD_HOST_DIAL_SCROLL_STEP
     help
       One step of the dial is one wheel click of an ordinary mouse at 1.
 
+config MINIMALPAD_HOST_LIGHTING
+    bool "The pad's own lighting, read and set from Studio"
+    depends on ZMK_RGB_UNDERGLOW
+    default y
+    help
+      GET_LIGHTING and SET_LIGHTING: Studio reads and changes the underglow
+      the pad keeps as its own, on or off, colour, brightness, effect and
+      speed, as its lighting keys and the dial do, and the pad sends
+      LIGHTING_STATE when that changes. It also has the pad save a colour or
+      brightness changed with its keys or the dial, which ZMK otherwise
+      leaves until its next save of something else (ZMK issue #1920). The
+      build advertises MP_CAP_LIGHTING in HELLO_ACK when this is on.
+
 config MINIMALPAD_HOST_LEDS_FORCE_SOLID
     bool "Show a host colour with the solid effect"
     depends on ZMK_RGB_UNDERGLOW
@@ -132,7 +145,9 @@ menuconfig MINIMALPAD_LEDS_IDLE_FADE
       then switches it off the same way, cutting the LEDs' power. A key or the
       dial brings it straight back. When the pad restarts while the underglow
       is off for idle, after deep sleep, a reset or a flat battery, the
-      underglow comes back on, where ZMK's option leaves it off.
+      underglow comes back on, where ZMK's option leaves it off. The fade
+      waits while Studio changes the lights, and after a change to them until
+      ZMK has saved it, a minute after the change.
 
 if MINIMALPAD_LEDS_IDLE_FADE
 

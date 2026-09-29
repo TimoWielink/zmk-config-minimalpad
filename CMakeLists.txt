@@ -53,6 +53,9 @@ if(CONFIG_MINIMALPAD_HOST)
     ${CMAKE_CURRENT_SOURCE_DIR}/src/behaviors/host_dial.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/host/dial.c
   )
+  target_sources_ifdef(CONFIG_MINIMALPAD_HOST_LIGHTING app PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/host/lighting.c
+  )
 endif()
 
 target_sources_ifdef(CONFIG_MINIMALPAD_STUDIO_BLE app PRIVATE

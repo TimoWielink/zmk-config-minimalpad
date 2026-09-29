@@ -94,7 +94,13 @@ static int usb_send(const uint8_t *frame, size_t len) {
         return -ENOTCONN;
     }
 
-    k_mutex_lock(&mp_host_usb_tx_mutex, K_FOREVER);
+    // Bounded too. ZMK leaves a Studio response it fails to encode unfinished, and this lock
+    // held with it until Studio's next response ends, which needs this work queue to pass on
+    // the request first. Waiting forever here, the pad would stop for good.
+    if (k_mutex_lock(&mp_host_usb_tx_mutex, TX_WAIT) != 0) {
+        LOG_WRN("A Studio response is holding the USB channel");
+        return -EBUSY;
+    }
     const int err = wire_write_locked(frame, len);
     k_mutex_unlock(&mp_host_usb_tx_mutex);
     return err;

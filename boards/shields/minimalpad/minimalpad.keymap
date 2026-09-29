@@ -86,8 +86,8 @@
         // ║  LIGHTS  ║   NEXT   ║  COLOUR  ║  COLOUR  ║  Lights
         // ║  ON/OFF  ║  EFFECT  ║    −     ║    +     ║
         // ╠══════════╬══════════╬══════════╬══════════╣
-        // ║  LIGHTS  ║  LIGHTS  ║          ║  (HELD)  ║  Light brightness
-        // ║  DIMMER  ║ BRIGHTER ║    —     ║          ║
+        // ║  LIGHTS  ║  LIGHTS  ║ PREVIOUS ║  (HELD)  ║  Light brightness, previous effect
+        // ║  DIMMER  ║ BRIGHTER ║  EFFECT  ║          ║
         // ╠══════════╩══════════╩══════════╩══════════╣
         // ║      LIGHTS ON/OFF  (encoder button)      ║
         // ╚═══════════════════════════════════════════╝
@@ -103,7 +103,7 @@
                 &bt BT_SEL 0       &bt BT_SEL 1       &bt BT_SEL 2       &bt BT_SEL 3
                 &bt BT_SEL 4       &out OUT_USB       &out OUT_BLE       &bt BT_CLR
                 &rgb_ug RGB_TOG    &rgb_ug RGB_EFF    &rgb_ug RGB_HUD    &rgb_ug RGB_HUI
-                &rgb_ug RGB_BRD    &rgb_ug RGB_BRI    &none              &trans
+                &rgb_ug RGB_BRD    &rgb_ug RGB_BRI    &rgb_ug RGB_EFR    &trans
                 &rgb_ug RGB_TOG
             >;
             sensor-bindings = <&dial_lights>;

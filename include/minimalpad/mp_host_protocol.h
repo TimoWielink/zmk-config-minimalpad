@@ -42,8 +42,10 @@
  * 2: STATE grew mp_state_event.bt_profile, behind MP_CAP_BT_PROFILE.
  * 3: the pad sends ACTION_EVENT for &mac_action keys, behind MP_CAP_MAC_ACTIONS.
  * 4: SET_DIAL, GET_DIAL and DIAL_STATE, a dial for each layer kept on the pad,
- *    behind MP_CAP_LAYER_DIALS. */
-#define MP_HOST_PROTOCOL_VERSION 4
+ *    behind MP_CAP_LAYER_DIALS.
+ * 5: GET_LIGHTING, SET_LIGHTING and LIGHTING_STATE, the pad's own lighting read
+ *    and set from a host, behind MP_CAP_LIGHTING. */
+#define MP_HOST_PROTOCOL_VERSION 5
 
 /* A frame never exceeds this, so it fits the smallest negotiated ATT MTU
  * (23 bytes, less 3 for the ATT header) without chunking. */
@@ -71,6 +73,8 @@ enum mp_host_command {
 	MP_CMD_GET_STATE = 0x06,
 	MP_CMD_SET_DIAL = 0x07,
 	MP_CMD_GET_DIAL = 0x08,
+	MP_CMD_GET_LIGHTING = 0x09,
+	MP_CMD_SET_LIGHTING = 0x0A,
 };
 
 /* Events, pad to host. */
@@ -83,6 +87,7 @@ enum mp_host_event {
 	MP_EVT_FALLBACK = 0x86,
 	MP_EVT_REJECTED = 0x87,
 	MP_EVT_DIAL_STATE = 0x88,
+	MP_EVT_LIGHTING_STATE = 0x89,
 };
 
 /* Guards MP_CMD_ENTER_BOOTLOADER, so a stray frame cannot reboot a pad. */
@@ -114,6 +119,10 @@ enum mp_host_event {
 #define MP_CAP_BT_PROFILE BIT(3) /* STATE carries bt_profile */
 #define MP_CAP_MAC_ACTIONS BIT(4) /* &mac_action keys send ACTION_EVENT */
 #define MP_CAP_LAYER_DIALS BIT(5) /* SET_DIAL, GET_DIAL and DIAL_STATE */
+#define MP_CAP_LIGHTING BIT(6) /* GET_LIGHTING, SET_LIGHTING and LIGHTING_STATE */
+/* Bit 7 is the last one, and HELLO_ACK cannot grow a second caps byte: Studio
+ * 0.1.0 to 0.3.0 read HELLO_ACK as exactly seven bytes and fail the handshake on
+ * a longer one. Find another way to announce a feature before spending bit 7. */
 
 /* What one dial value does, in SET_DIAL and DIAL_STATE, one per direction of
  * turn. It is a ZMK keycode, so modifier flags in bits 31-24, a HID usage page
@@ -168,6 +177,51 @@ enum mp_dial_source {
 	MP_DIAL_SOURCE_BELOW = 2, /* none: a turn goes to the layer below */
 	MP_DIAL_SOURCE_FIXED = 3, /* another behavior the host cannot change */
 };
+
+/* The pad's own lighting, read with GET_LIGHTING and set with SET_LIGHTING
+ * (host-protocol.md, "Lighting"): the underglow the pad shows without Studio,
+ * kept in its settings like its lighting keys' changes. Not a profile's colour,
+ * which stays temporary and goes through SET_PROFILE and SET_LEDS. */
+
+/* mp_set_lighting.fields: which parts of the frame the pad applies. A part left
+ * out stays as it is. Every field is range-checked whatever these say, so a host
+ * fills the parts it leaves out from the last LIGHTING_STATE. Bits 5-7 are for
+ * fields a later revision adds on the end: a host sends them clear, and a pad
+ * ignores the bits it does not know. */
+#define MP_LIGHTING_FIELD_ON BIT(0)
+#define MP_LIGHTING_FIELD_COLOR BIT(1) /* hue and saturation together */
+#define MP_LIGHTING_FIELD_BRIGHTNESS BIT(2)
+#define MP_LIGHTING_FIELD_EFFECT BIT(3)
+#define MP_LIGHTING_FIELD_SPEED BIT(4)
+
+/* The effects, in mp_set_lighting.effect and mp_lighting_state.effect. The
+ * protocol names them because ZMK keeps its own list private; the ZMK revision
+ * config/west.yml pins numbers them the same way. A pad reports how many it has
+ * in mp_lighting_state.effect_count and accepts only an effect below that. */
+enum mp_lighting_effect {
+	MP_LIGHTING_EFFECT_SOLID = 0, /* hue, saturation and brightness as set */
+	MP_LIGHTING_EFFECT_BREATHE = 1, /* hue and saturation; brightness pulses */
+	MP_LIGHTING_EFFECT_SPECTRUM = 2, /* saturation and brightness; hue cycles */
+	MP_LIGHTING_EFFECT_SWIRL = 3, /* saturation and brightness; hue moves across */
+};
+
+#define MP_LIGHTING_EFFECT_COUNT 4
+
+/* Animation speed, slowest to fastest. Solid does not use it. */
+#define MP_LIGHTING_SPEED_MIN 1
+#define MP_LIGHTING_SPEED_MAX 5
+
+/* mp_lighting_state.flags. Bits 4-7 are sent clear, and a host ignores the bits
+ * it does not know. */
+#define MP_LIGHTING_FLAG_HOST_COLOR BIT(0) /* a host colour shows in place of the pad's own */
+#define MP_LIGHTING_FLAG_RESTING BIT(1) /* on, but dimming or off because the pad is idle */
+#define MP_LIGHTING_FLAG_SPEED_EXACT BIT(2) /* speed is the one the lights run at */
+#define MP_LIGHTING_FLAG_SET_ANSWER BIT(3) /* this frame answers a SET_LIGHTING */
+
+/* A SET_LIGHTING that leaves the lights on wakes them from resting and holds
+ * off the idle fade until this many seconds after the last one. Host commands
+ * are not activity to ZMK, so without it the lights would fade mid-edit. */
+#define MP_LIGHTING_HOLD_SECONDS 30
 
 /* Why the pad returned to Default, in mp_fallback.reason. */
 enum mp_fallback_reason {
@@ -237,6 +291,21 @@ struct mp_get_dial {
 	uint8_t layer_id;
 } __packed;
 
+/* MP_CMD_SET_LIGHTING: changes the pad's own lighting, which it saves as it
+ * saves a change made with its lighting keys. Only the active host may send it,
+ * and it arms no fallback. The pad answers every host listening with
+ * LIGHTING_STATE, MP_LIGHTING_FLAG_SET_ANSWER set. GET_LIGHTING has no payload.
+ * 8 bytes of payload. */
+struct mp_set_lighting {
+	uint8_t fields; /* MP_LIGHTING_FIELD_* */
+	uint8_t on; /* 0 off, 1 on */
+	uint16_t hue; /* 0-359 */
+	uint8_t saturation; /* 0-100 */
+	uint8_t brightness; /* 0-100; 0 is dark, not off */
+	uint8_t effect; /* enum mp_lighting_effect, below effect_count */
+	uint8_t speed; /* MP_LIGHTING_SPEED_MIN-MP_LIGHTING_SPEED_MAX */
+} __packed;
+
 /* MP_CMD_HEARTBEAT: the pad returns to Default when this window passes. */
 struct mp_heartbeat {
 	uint8_t timeout_seconds;
@@ -299,6 +368,8 @@ struct mp_state_event {
 	uint8_t top_layer_id; /* the highest active layer */
 	uint8_t endpoint; /* enum mp_endpoint */
 	uint8_t battery; /* percent, 0xFF when unknown */
+	/* 0 when switched off, by hand or at the end of the idle fade. LIGHTING_STATE
+	 * tells the two apart. */
 	uint8_t leds_on;
 	/* Added in revision 2, so it is sent only when caps has MP_CAP_BT_PROFILE.
 	 * A host that predates it reads the five bytes it knows and ignores this
@@ -315,6 +386,24 @@ struct mp_dial_state {
 	uint32_t ccw;
 	uint8_t keymap_source; /* where it would come from with nothing set: _KEYMAP,
 				* _BELOW or _FIXED, so a host knows what clearing does */
+} __packed;
+
+/* MP_EVT_LIGHTING_STATE: the pad's own lighting. The answer to GET_LIGHTING,
+ * sent to the host that asked, and to SET_LIGHTING, sent to every host
+ * listening; the pad also volunteers it to every host listening whenever its
+ * lighting changes. Colour, brightness and effect are the pad's own even while
+ * a host colour shows in their place. Bytes 1-7 are laid out as in
+ * mp_set_lighting. 9 bytes of payload; a later revision adds fields to the end,
+ * so a host reads these nine and ignores what trails them. */
+struct mp_lighting_state {
+	uint8_t flags; /* MP_LIGHTING_FLAG_* */
+	uint8_t on; /* 1 on, resting included; 0 switched off */
+	uint16_t hue; /* 0-359 */
+	uint8_t saturation; /* 0-100 */
+	uint8_t brightness; /* 0-100, as when awake, never a step of the idle fade */
+	uint8_t effect; /* enum mp_lighting_effect */
+	uint8_t speed; /* 1-5, exact only with MP_LIGHTING_FLAG_SPEED_EXACT */
+	uint8_t effect_count; /* MP_LIGHTING_EFFECT_COUNT on this firmware */
 } __packed;
 
 /* MP_EVT_FALLBACK: the pad has returned to Default. */

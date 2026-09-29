@@ -127,10 +127,8 @@ void mp_host_broadcast(uint8_t event, const void *payload, uint8_t len) {
     }
 }
 
-/* Answers the host whose frame is being handled, and only that host
- * (host-protocol.md, "Who hears what"). */
-static void reply(const struct mp_host_transport *to, uint8_t event, const void *payload,
-                  uint8_t len) {
+void mp_host_reply(const struct mp_host_transport *to, uint8_t event, const void *payload,
+                   uint8_t len) {
     int err = send_frame(to->reply, event, payload, len);
     if (err < 0) {
         LOG_WRN("Failed to answer with event 0x%02x over %s (%d)", event, to->name, err);
@@ -140,7 +138,7 @@ static void reply(const struct mp_host_transport *to, uint8_t event, const void 
 void mp_host_reject(const struct mp_host_transport *from, uint8_t command,
                     enum mp_rejected_reason reason) {
     const struct mp_rejected_event event = {.command = command, .reason = reason};
-    reply(from, MP_EVT_REJECTED, &event, sizeof(event));
+    mp_host_reply(from, MP_EVT_REJECTED, &event, sizeof(event));
 }
 
 /*
@@ -203,6 +201,9 @@ static bool leds_in_range(uint16_t hue, uint8_t saturation, uint8_t brightness) 
  * saturation and brightness in percent, the protocol's own units, so colours
  * pass through unconverted. Colours go through leds.h, so one taken or set
  * while the LEDs fade out for idle is the pad's and not a dimmed step.
+ *
+ * While it is held, SET_LIGHTING changes the pad's colour and effect here
+ * rather than on the LEDs (src/host/lighting.c), so they come back changed.
  */
 struct leds_snapshot {
     struct zmk_led_hsb color;
@@ -236,14 +237,32 @@ static void leds_snapshot_save(struct k_work *work) {
 
 static K_WORK_DEFINE(leds_snapshot_save_work, leds_snapshot_save);
 
+/*
+ * A change to a snapshot already in flash, from SET_LIGHTING, is saved once
+ * changes stop for ZMK's own save debounce, as the pad's own lighting is, so
+ * dragging a slider costs one write. The first save of a snapshot stays
+ * immediate.
+ */
+static K_WORK_DELAYABLE_DEFINE(leds_snapshot_resave_work, leds_snapshot_save);
+
+static void leds_snapshot_forget(struct k_work *work);
+
+static K_WORK_DELAYABLE_DEFINE(leds_snapshot_forget_work, leds_snapshot_forget);
+
 static void leds_snapshot_forget(struct k_work *work) {
+    // A fade that started meanwhile moves ZMK's save of the pad's own lighting later, so the
+    // copy stays until that save has landed.
+    const int64_t left = mp_leds_save_due() + LEDS_SNAPSHOT_FORGET_MARGIN_MS - k_uptime_get();
+    if (left > 0) {
+        k_work_reschedule(&leds_snapshot_forget_work, K_MSEC(left));
+        return;
+    }
+
     int err = settings_delete(LEDS_SNAPSHOT_SETTING);
     if (err < 0) {
         LOG_WRN("Failed to delete the underglow snapshot (%d)", err);
     }
 }
-
-static K_WORK_DELAYABLE_DEFINE(leds_snapshot_forget_work, leds_snapshot_forget);
 
 #endif /* IS_ENABLED(CONFIG_SETTINGS) */
 
@@ -260,6 +279,9 @@ static void leds_apply(uint16_t hue, uint8_t saturation, uint8_t brightness) {
         k_work_cancel_delayable(&leds_snapshot_forget_work);
         k_work_submit(&leds_snapshot_save_work);
 #endif
+
+        // LIGHTING_STATE says a host colour now shows.
+        mp_host_lighting_changed();
     }
 
     // Only the colour changes. LEDs that are off, by hand or for idle, stay off and wake in
@@ -276,6 +298,7 @@ static void leds_apply(uint16_t hue, uint8_t saturation, uint8_t brightness) {
     if (IS_ENABLED(CONFIG_MINIMALPAD_HOST_LEDS_FORCE_SOLID) &&
         zmk_rgb_underglow_calc_effect(0) != UNDERGLOW_EFFECT_SOLID) {
         zmk_rgb_underglow_select_effect(UNDERGLOW_EFFECT_SOLID);
+        mp_leds_save_scheduled();
     }
 }
 
@@ -288,14 +311,70 @@ static void leds_restore(void) {
     // Selecting the effect also schedules ZMK's own save of the underglow state, which holds
     // the pad's colour again by the time it runs.
     zmk_rgb_underglow_select_effect(leds_snapshot.effect);
+    mp_leds_save_scheduled();
     leds_snapshot_held = false;
 
 #if IS_ENABLED(CONFIG_SETTINGS)
+    // ZMK's save now covers the pad's own lighting, SET_LIGHTING's changes included.
+    k_work_cancel_delayable(&leds_snapshot_resave_work);
+
     // Keep the copy in flash until that save has had its chance, so a power cut in between
     // still wakes the pad in its own colours.
     k_work_reschedule(&leds_snapshot_forget_work,
                       K_MSEC(CONFIG_ZMK_SETTINGS_SAVE_DEBOUNCE + LEDS_SNAPSHOT_FORGET_MARGIN_MS));
 #endif
+
+    // LIGHTING_STATE says the pad's own colour shows again.
+    mp_host_lighting_changed();
+}
+
+bool mp_host_leds_held(void) { return leds_snapshot_held; }
+
+struct zmk_led_hsb mp_host_own_color(void) {
+    return leds_snapshot_held ? leds_snapshot.color : mp_leds_color();
+}
+
+uint8_t mp_host_own_effect(void) {
+    // With a direction of 0 this returns the current effect unchanged.
+    return leds_snapshot_held ? leds_snapshot.effect : zmk_rgb_underglow_calc_effect(0);
+}
+
+static void leds_snapshot_changed(void) {
+#if IS_ENABLED(CONFIG_SETTINGS)
+    k_work_reschedule(&leds_snapshot_resave_work, K_MSEC(CONFIG_ZMK_SETTINGS_SAVE_DEBOUNCE));
+#endif
+}
+
+int mp_host_set_own_color(struct zmk_led_hsb color) {
+    if (!leds_snapshot_held) {
+        return mp_leds_set_color(color);
+    }
+
+    // Shown when the host colour is released. The host colour keeps its own brightness.
+    leds_snapshot.color = color;
+    leds_snapshot_changed();
+    return 0;
+}
+
+int mp_host_set_own_effect(uint8_t effect) {
+    if (!leds_snapshot_held) {
+        int err = zmk_rgb_underglow_select_effect(effect);
+        mp_leds_wait_for_save();
+        return err;
+    }
+
+    leds_snapshot.effect = effect;
+    leds_snapshot_changed();
+
+    // A forced host colour stays solid. Otherwise it shows in the pad's own effect, and ZMK's
+    // save holds the host colour, which the copy in flash stands in for.
+    if (IS_ENABLED(CONFIG_MINIMALPAD_HOST_LEDS_FORCE_SOLID)) {
+        return 0;
+    }
+
+    int err = zmk_rgb_underglow_select_effect(effect);
+    mp_leds_save_scheduled();
+    return err;
 }
 
 static bool leds_on(void) {
@@ -549,16 +628,18 @@ void mp_host_handle_hello(const struct mp_host_transport *from, const uint8_t *p
         // The Bluetooth slot is claimed on every build, including one without Bluetooth, where
         // the byte can only say MP_BT_PROFILE_NONE: the bit promises the host that STATE
         // carries the field, not that the pad has a slot to report.
-        // Mac actions are claimed when the &mac_action behavior is compiled in.
+        // Mac actions are claimed when the &mac_action behavior is compiled in, and lighting
+        // when src/host/lighting.c is.
         .caps = MP_CAP_PROFILES | MP_CAP_BT_PROFILE |
                 (IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW) ? MP_CAP_LEDS : 0) |
                 (IS_ENABLED(CONFIG_MINIMALPAD_MAC_ACTION) ? MP_CAP_MAC_ACTIONS : 0) |
-                (IS_ENABLED(CONFIG_MINIMALPAD_HOST_DIAL) ? MP_CAP_LAYER_DIALS : 0),
+                (IS_ENABLED(CONFIG_MINIMALPAD_HOST_DIAL) ? MP_CAP_LAYER_DIALS : 0) |
+                (IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTING) ? MP_CAP_LIGHTING : 0),
         .layer_count = ZMK_KEYMAP_LAYERS_LEN,
         .free_layers = free_layer_slots(),
     };
 
-    reply(from, MP_EVT_HELLO_ACK, &ack, sizeof(ack));
+    mp_host_reply(from, MP_EVT_HELLO_ACK, &ack, sizeof(ack));
 
     // USB has no subscribe step, so HELLO is when that host arrives. Bluetooth
     // already volunteered STATE on subscribe; forcing a current one here is
@@ -691,7 +772,7 @@ void mp_host_handle_get_state(const struct mp_host_transport *from, const uint8_
     ARG_UNUSED(payload);
 
     const struct mp_state_event state = current_state();
-    reply(from, MP_EVT_STATE, &state, sizeof(state));
+    mp_host_reply(from, MP_EVT_STATE, &state, sizeof(state));
 }
 
 /*
