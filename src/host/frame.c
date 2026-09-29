@@ -39,14 +39,15 @@ struct command {
 
 /*
  * host-protocol.md, "Commands, host to pad". A command added to the protocol
- * gets a line here and a handler in host.c.
+ * gets a line here and a handler in host.c, or in a file of its own such as
+ * dial.c or lighting.c.
  *
  * Payload sizes come from the header's structs, and the asserts below pin those
  * to the spec's numbers, so a header that drifts from the spec fails the build
  * instead of every frame on the pad.
  *
- * HELLO, GET_STATE and GET_DIAL change nothing, so any bonded host gets an answer
- * (host-protocol.md, "Which host is in charge").
+ * HELLO, GET_STATE, GET_DIAL and GET_LIGHTING change nothing, so any bonded host
+ * gets an answer (host-protocol.md, "Which host is in charge").
  */
 static const struct command commands[] = {
     {MP_CMD_HELLO, 0, false, mp_host_handle_hello},
@@ -60,6 +61,10 @@ static const struct command commands[] = {
     {MP_CMD_SET_DIAL, sizeof(struct mp_set_dial), true, mp_host_handle_set_dial},
     {MP_CMD_GET_DIAL, sizeof(struct mp_get_dial), false, mp_host_handle_get_dial},
 #endif
+#if IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTING)
+    {MP_CMD_GET_LIGHTING, 0, false, mp_host_handle_get_lighting},
+    {MP_CMD_SET_LIGHTING, sizeof(struct mp_set_lighting), true, mp_host_handle_set_lighting},
+#endif
 };
 
 BUILD_ASSERT(sizeof(struct mp_host_frame_header) == MP_HOST_HEADER_LEN);
@@ -67,6 +72,8 @@ BUILD_ASSERT(sizeof(struct mp_set_profile) == 14, "SET_PROFILE carries 14 payloa
 BUILD_ASSERT(sizeof(struct mp_heartbeat) == 1, "HEARTBEAT carries 1 payload byte");
 BUILD_ASSERT(sizeof(struct mp_set_leds) == 4, "SET_LEDS carries 4 payload bytes");
 BUILD_ASSERT(sizeof(struct mp_enter_bootloader) == 4, "ENTER_BOOTLOADER carries 4 payload bytes");
+BUILD_ASSERT(sizeof(struct mp_set_lighting) == 8, "SET_LIGHTING carries 8 payload bytes");
+BUILD_ASSERT(sizeof(struct mp_lighting_state) == 9, "LIGHTING_STATE carries 9 payload bytes");
 
 static const struct command *find_command(uint8_t id) {
     for (size_t i = 0; i < ARRAY_SIZE(commands); i++) {

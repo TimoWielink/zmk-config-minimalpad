@@ -2,6 +2,14 @@
 
 What changed in each version of the MinimalPad firmware. How versions are numbered and released is in [docs/releasing.md](docs/releasing.md). A version's section here becomes the description of its GitHub Release, so write it for the people who will flash it.
 
+## 0.7.0
+
+- MinimalPad Studio for Mac, from its next release, can change the pad's own lights: switch them on or off, and set their brightness, colour, effect and speed. The pad keeps what you choose, as it keeps changes made with the lights keys, so the lights stay that way without Studio, on any computer. While you're changing them they stay on, and they fade out once the pad has saved your change, about a minute after the last one.
+- Studio can also tell lights that are resting, faded out because you haven't touched the pad for a while, from lights you switched off.
+- A colour or brightness you set with the pad's keys or the dial is now saved a minute after your last change. Before, it was saved only once the lights had faded out and another minute had passed, so unplugging or restarting the pad sooner lost it. After any change to the lights made with the keys or the dial, they don't fade out until the pad has saved it, up to a minute after your last change.
+- On the Connections & LEDs layer, the empty key on the bottom row, next to **Brightness up**, is now **Previous light effect**. A key you changed there yourself stays as you set it.
+- Nothing else changes: your keys, layers, profiles, dial and lights are as you left them, and you don't need to pair the pad again.
+
 ## 0.6.1
 
 - The lights now show the colour you pick. Red and green were swapped on the way to the LEDs, so an orange profile lit the pad lime green, violet showed as blue and red as green. Blue was right.

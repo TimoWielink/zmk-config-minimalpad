@@ -1,13 +1,14 @@
 /*
  * Minimalpad host module
  *
- * What the frame reader (frame.c), the core (host.c) and the transports share.
- * The wire format itself lives in mp_host_protocol.h, a verbatim copy of
+ * What the frame reader (frame.c), the core (host.c, with dial.c and
+ * lighting.c) and the transports share. The wire format itself lives in
+ * mp_host_protocol.h, a verbatim copy of
  * minimalpad-studio-mac/docs/protocol/mp_host_protocol.h: change it there.
  *
  * Threading: the core runs on the system work queue, the queue ZMK processes
  * key presses on. Transports hand received bytes to that queue before calling
- * mp_host_reader_feed(), and only mp_host_host_arrived() may be called from
+ * mp_host_reader_feed(), and only the calls below that say so may be made from
  * elsewhere.
  *
  * SPDX-License-Identifier: MIT
@@ -20,6 +21,10 @@
 #include <stdint.h>
 
 #include <minimalpad/mp_host_protocol.h>
+
+#if IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW)
+#include <zmk/rgb_underglow.h>
+#endif
 
 /*
  * One way to reach a host. Bluetooth has its GATT adapter and USB has a
@@ -76,8 +81,8 @@ void mp_host_reader_reset(struct mp_host_reader *reader);
 
 /*
  * Command handlers, host.c. frame.c calls them with a payload whose length
- * already matches the command's struct in mp_host_protocol.h (none for HELLO
- * and GET_STATE). Replies go back through `from`.
+ * already matches the command's struct in mp_host_protocol.h (none for HELLO,
+ * GET_STATE and GET_LIGHTING). Replies go back through `from`.
  */
 void mp_host_handle_hello(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_set_profile(const struct mp_host_transport *from, const uint8_t *payload);
@@ -95,6 +100,9 @@ void mp_host_handle_get_state(const struct mp_host_transport *from, const uint8_
 bool mp_host_dial_resolve(uint8_t answering_layer, bool clockwise, uint32_t *value);
 void mp_host_handle_set_dial(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_get_dial(const struct mp_host_transport *from, const uint8_t *payload);
+/* src/host/lighting.c, built with CONFIG_MINIMALPAD_HOST_LIGHTING. */
+void mp_host_handle_get_lighting(const struct mp_host_transport *from, const uint8_t *payload);
+void mp_host_handle_set_lighting(const struct mp_host_transport *from, const uint8_t *payload);
 
 /*
  * Answers a dropped command with REJECTED, to the host that sent it only. A
@@ -103,6 +111,13 @@ void mp_host_handle_get_dial(const struct mp_host_transport *from, const uint8_t
  */
 void mp_host_reject(const struct mp_host_transport *from, uint8_t command,
                     enum mp_rejected_reason reason);
+
+/*
+ * Answers the host whose frame is being handled, and only that host
+ * (host-protocol.md, "Who hears what"). Only valid inside a handler.
+ */
+void mp_host_reply(const struct mp_host_transport *to, uint8_t event, const void *payload,
+                   uint8_t len);
 
 /*
  * Sends one event to one transport, or to every transport with a host
@@ -128,6 +143,61 @@ void mp_host_host_arrived(const struct mp_host_transport *transport);
  * flag changed. Safe from any thread.
  */
 void mp_host_leds_changed(void);
+
+#if IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTING)
+
+/*
+ * The pad's own lighting may have changed with no ZMK event to say so: the
+ * LEDs started or stopped resting for idle (src/leds/idle_fade.c), or a host
+ * colour started or stopped showing. The pad sends LIGHTING_STATE if it
+ * differs from the last one every host heard. Safe from any thread.
+ */
+void mp_host_lighting_changed(void);
+
+/*
+ * The dial stepped the underglow's speed, `steps` faster or, below 0, slower
+ * (src/behaviors/host_dial.c). ZMK cannot report the speed, so the pad counts
+ * it. Each step also schedules ZMK's save, which the idle fade waits for
+ * (mp_leds_wait_for_save()). Call from the system work queue.
+ */
+void mp_host_lighting_speed_stepped(int steps);
+
+#else
+
+static inline void mp_host_lighting_changed(void) {}
+
+static inline void mp_host_lighting_speed_stepped(int steps) { (void)steps; }
+
+#endif /* IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTING) */
+
+#if IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW)
+
+/*
+ * The pad's own underglow colour and effect, host.c. While a host colour shows
+ * they are the ones the pad keeps aside and puts back when it is released;
+ * otherwise they are the live ones. Colours are the pad's awake ones, never a
+ * step of the idle fade (leds.h). Call from the system work queue.
+ */
+
+/* Whether a host colour shows in place of the pad's own. */
+bool mp_host_leds_held(void);
+
+struct zmk_led_hsb mp_host_own_color(void);
+
+uint8_t mp_host_own_effect(void);
+
+/*
+ * Set the pad's own colour or effect wherever it is kept. Kept aside, the
+ * change shows when the host colour is released, and the copy in flash is
+ * saved again once changes stop. Live, the colour saves nothing, as
+ * zmk_rgb_underglow_set_hsb() does not (see mp_leds_save()), and the effect
+ * schedules ZMK's save.
+ */
+int mp_host_set_own_color(struct zmk_led_hsb color);
+
+int mp_host_set_own_effect(uint8_t effect);
+
+#endif /* IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW) */
 
 /*
  * Whether a layer id names a layer the keymap holds now, as opposed to a

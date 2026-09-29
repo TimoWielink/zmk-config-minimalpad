@@ -211,6 +211,13 @@ static int host_dial_process(struct zmk_behavior_binding *binding,
                 .param1 = command,
             };
             tap(&event, lights, steps, cfg->tap_ms);
+
+            // ZMK cannot report the speed, so the pad counts these steps (src/host/lighting.c).
+            if (command == RGB_SPI_CMD) {
+                mp_host_lighting_speed_stepped(steps);
+            } else if (command == RGB_SPD_CMD) {
+                mp_host_lighting_speed_stepped(-steps);
+            }
         }
 #endif
         break;
