@@ -190,10 +190,11 @@ struct mp_light mp_lights_resolve(uint8_t position);
 
 /*
  * Shows the pad's own lighting in place of layer and key lights for `ms` from
- * now, so a change to it can be seen. Another call renews the show, to `ms` from
- * then, and 0 ends it at once. SHOW_PAD_LIGHTING asks for it while Studio's
- * Lights popover is open, and lighting.c asks for it when a key or the dial
- * changes the pad's colour, effect or speed. Safe from any thread.
+ * now, so a change to it can be seen. A call with `ms` above 0 renews the show
+ * to `ms` from then, but never shortens one that lasts longer, and 0 ends it at
+ * once. SHOW_PAD_LIGHTING asks for it while Studio's Lights popover is open, and
+ * lighting.c asks for it when a key or the dial changes the pad's colour,
+ * effect or speed. Safe from any thread.
  */
 void mp_lights_show_pad(uint32_t ms);
 

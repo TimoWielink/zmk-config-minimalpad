@@ -167,8 +167,12 @@ void mp_lights_show_pad(uint32_t ms) {
     // ends a show at once.
     const int64_t until = ms == 0 ? 0 : k_uptime_get() + ms;
 
+    // A call never shortens a show: the 3 seconds after a key must not cut short the ten that
+    // Studio's popover asked for. Only 0 ends one early.
     k_spinlock_key_t key = k_spin_lock(&lights_lock);
-    show_until = until;
+    if (ms == 0 || until > show_until) {
+        show_until = until;
+    }
     k_spin_unlock(&lights_lock, key);
 }
 
