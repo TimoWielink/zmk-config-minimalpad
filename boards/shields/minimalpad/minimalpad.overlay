@@ -7,9 +7,11 @@
 
 / {
     // Layer and key lights, drawn over the underglow's frame on its way to the
-    // chain (src/leds/light_layers.c). The chain snakes along the rows: row 1
-    // left to right, row 2 right to left, and so on (PCB LED1 to LED16), so
-    // key-positions lists the key each LED sits under, in chain order.
+    // chain (src/leds/light_layers.c). It is the underglow's strip on every
+    // build, and passes every frame through when the host lights are off. The
+    // chain snakes along the rows: row 1 left to right, row 2 right to left, and
+    // so on (PCB LED1 to LED16), so key-positions lists the key each LED sits
+    // under, in chain order.
     light_layers: light_layers {
         compatible = "minimalpad,light-layers";
         led-strip = <&led_strip>;

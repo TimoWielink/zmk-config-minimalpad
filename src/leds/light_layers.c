@@ -11,9 +11,13 @@
  * Which light a key shows is mp_lights_resolve()'s to say (src/host/lights.c):
  * Inherit leaves the underglow's own pixel, a colour is drawn at the
  * underglow's current brightness, and Off is dark. While the underglow is off
- * the frame goes through as it is: the host never turns lights on. While Studio
- * is showing the pad's own lighting (mp_lights_showing_pad()), the underglow
+ * the frame goes through as it is: the host never turns lights on. While the
+ * pad is showing its own lighting (mp_lights_showing_pad()), the underglow
  * shows as it is, in every pixel.
+ *
+ * The strip is built whether or not the host module's lights are, because the
+ * shield's devicetree makes it the underglow's. Without them (host.h) every
+ * key resolves to Inherit and every frame goes through unchanged.
  *
  * SPDX-License-Identifier: MIT
  */
