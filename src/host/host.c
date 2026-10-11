@@ -82,8 +82,12 @@ static const struct mp_host_transport *const transports[] = {
 #endif
 };
 
-/* The layer the host last set: STATE's layer_id, the profile. */
+/* STATE's layer_id, the profile layer the pad is on for the host: the one the host last set, or
+ * the one a &profile_layer key has swapped to since (profile_layers.c). */
 static zmk_keymap_layer_id_t host_layer;
+
+/* STATE's change: why host_layer last changed. */
+static enum mp_layer_change last_change = MP_LAYER_CHANGE_HOST;
 
 /*
  * Sending
@@ -452,9 +456,7 @@ static struct mp_state_event current_state(void) {
         .battery = battery_percent(),
         .leds_on = leds_on(),
         .bt_profile = state_bt_profile(),
-        // Nothing moves the layer except the host yet; the &profile_layer behavior will say when
-        // a key did.
-        .change = MP_LAYER_CHANGE_HOST,
+        .change = last_change,
     };
 }
 
@@ -468,12 +470,15 @@ static void state_update(struct k_work *work) {
     const struct mp_state_event state = current_state();
 
     // host-protocol.md, "State": sent whenever the layer, endpoint, LED state or Bluetooth
-    // slot changes. Battery rides along but does not send one by itself.
+    // slot changes. Battery rides along but does not send one by itself. Why the layer changed
+    // counts on its own: a host switch to the layer a key already chose moves nothing, but the
+    // layer is the host's again, and Studio reads that from change.
     const bool changed = !last_state_valid || state.layer_id != last_state.layer_id ||
                          state.top_layer_id != last_state.top_layer_id ||
                          state.endpoint != last_state.endpoint ||
                          state.leds_on != last_state.leds_on ||
-                         state.bt_profile != last_state.bt_profile;
+                         state.bt_profile != last_state.bt_profile ||
+                         state.change != last_state.change;
 
     if (!forced && !changed) {
         return;
@@ -555,10 +560,35 @@ SETTINGS_STATIC_HANDLER_DEFINE(minimalpad_host, "mp_host", NULL, host_settings_s
 #endif /* IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW) && IS_ENABLED(CONFIG_SETTINGS) */
 
 /*
+ * The host's layer
+ */
+
+/*
+ * Switches the pad to a layer for the host: SET_PROFILE, SWITCH_PROFILE and a
+ * fallback. Locking, as &to switches layers, so releasing a &mo for the same
+ * layer cannot drop the profile; and through zmk_keymap_layer_to(), so an app
+ * switch also ends a layer toggled on by hand. Only a &profile_layer key keeps
+ * the other layers, because it swaps (profile_layers.c).
+ */
+static void host_layer_to(zmk_keymap_layer_id_t id) {
+    host_layer = id;
+    last_change = MP_LAYER_CHANGE_HOST;
+    zmk_keymap_layer_to(id, true);
+}
+
+zmk_keymap_layer_id_t mp_host_layer(void) { return host_layer; }
+
+void mp_host_set_layer(zmk_keymap_layer_id_t id, enum mp_layer_change change) {
+    host_layer = id;
+    last_change = change;
+    request_state(false);
+}
+
+/*
  * Fallback, ADR 0005
  */
 
-/* The window the last HEARTBEAT named. SET_PROFILE and SET_LEDS arm it too. */
+/* The window the last HEARTBEAT named. SET_PROFILE, SWITCH_PROFILE and SET_LEDS arm it too. */
 static uint8_t heartbeat_window = CONFIG_MINIMALPAD_HOST_HEARTBEAT_DEFAULT_TIMEOUT;
 
 static void heartbeat_expired(struct k_work *work);
@@ -571,10 +601,13 @@ static void fall_back(enum mp_fallback_reason reason) {
     // Nothing left to watch until a host drives the pad again.
     k_work_cancel_delayable(&heartbeat_work);
 
+    // No host holds a profile any more, so &profile_layer keys have nothing to move between, and
+    // the release of a hold still down does nothing.
+    mp_profile_layers_clear();
+
     // Locking, as for SET_PROFILE, so a layer toggled on with &tog goes as well: Default means
     // the pad as it is out of the box.
-    host_layer = zmk_keymap_layer_default();
-    zmk_keymap_layer_to(host_layer, true);
+    host_layer_to(zmk_keymap_layer_default());
 
     leds_restore();
 
@@ -674,10 +707,11 @@ void mp_host_handle_set_profile(const struct mp_host_transport *from, const uint
         return;
     }
 
-    // Locking, as &to switches layers, so releasing a &mo for the same layer cannot drop the
-    // profile.
-    host_layer = cmd.layer_id;
-    zmk_keymap_layer_to(cmd.layer_id, true);
+    // SET_PROFILE names no group, so the pad holds none: an older Studio, or a switch to an app
+    // without a profile, leaves &profile_layer keys nothing to move between.
+    mp_profile_layers_clear();
+
+    host_layer_to(cmd.layer_id);
 
     // host-protocol.md, "Switching": every SET_PROFILE describes the whole switch. A flag set
     // takes that part from the frame; a flag clear puts back the pad's own, so switching to an
@@ -688,6 +722,16 @@ void mp_host_handle_set_profile(const struct mp_host_transport *from, const uint
         leds_restore();
     }
 
+    arm_fallback();
+    request_state(false);
+}
+
+void mp_host_switch_profile(zmk_keymap_layer_id_t id) {
+    host_layer_to(id);
+
+    // SWITCH_PROFILE is SET_PROFILE with no flags, so a host colour an older Studio left showing
+    // is put back.
+    leds_restore();
 
     arm_fallback();
     request_state(false);
@@ -786,6 +830,10 @@ void mp_host_handle_get_state(const struct mp_host_transport *from, const uint8_
  */
 uint8_t mp_host_features(void) {
     uint8_t features = 0;
+
+    if (IS_ENABLED(CONFIG_MINIMALPAD_PROFILE_LAYERS)) {
+        features |= BIT(MP_FEATURE_PROFILE_LAYERS);
+    }
 
     if (IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTS)) {
         features |= BIT(MP_FEATURE_LAYER_LIGHTS) | BIT(MP_FEATURE_KEY_LIGHTS);

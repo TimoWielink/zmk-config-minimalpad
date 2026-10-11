@@ -59,6 +59,9 @@ if(CONFIG_MINIMALPAD_HOST)
   target_sources_ifdef(CONFIG_MINIMALPAD_HOST_LIGHTS app PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/host/lights.c
   )
+  target_sources_ifdef(CONFIG_MINIMALPAD_PROFILE_LAYERS app PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/host/profile_layers.c
+  )
 endif()
 
 target_sources_ifdef(CONFIG_MINIMALPAD_STUDIO_BLE app PRIVATE

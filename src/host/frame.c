@@ -35,7 +35,31 @@ struct command {
     /* Changes the pad, so only the active host may send it. */
     bool changes_pad;
     mp_host_handler_t handle;
+    /* For a payload that says how long it is, as SWITCH_PROFILE's count does: the length that
+     * payload needs, which is a minimum like min_payload_len. Only called once the payload holds
+     * min_payload_len bytes. NULL for every other command. */
+    size_t (*needed_len)(const uint8_t *payload);
 };
+
+/* SWITCH_PROFILE's layer_id and count, then count layer ids: one at the least. */
+#define SWITCH_PROFILE_MIN_LEN (offsetof(struct mp_switch_profile, layer_ids) + 1)
+
+#if IS_ENABLED(CONFIG_MINIMALPAD_PROFILE_LAYERS)
+
+/*
+ * The ids SWITCH_PROFILE's count announces have to be in the frame, or the
+ * handler would read whatever the last frame left in the buffer. Checked here,
+ * with the length, so a frame too short for its count gets reason 0 before any
+ * other (host-protocol.md, "SWITCH_PROFILE"). A count above
+ * MP_SWITCH_PROFILE_GROUP_MAX needs more than any frame holds, so it lands here
+ * too.
+ */
+static size_t switch_profile_len(const uint8_t *payload) {
+    return offsetof(struct mp_switch_profile, layer_ids) +
+           payload[offsetof(struct mp_switch_profile, count)];
+}
+
+#endif /* IS_ENABLED(CONFIG_MINIMALPAD_PROFILE_LAYERS) */
 
 /*
  * host-protocol.md, "Commands, host to pad". A command added to the protocol
@@ -59,6 +83,10 @@ static const struct command commands[] = {
      mp_host_handle_enter_bootloader},
     {MP_CMD_GET_STATE, 0, false, mp_host_handle_get_state},
     {MP_CMD_GET_FEATURES, 0, false, mp_host_handle_get_features},
+#if IS_ENABLED(CONFIG_MINIMALPAD_PROFILE_LAYERS)
+    {MP_CMD_SWITCH_PROFILE, SWITCH_PROFILE_MIN_LEN, true, mp_host_handle_switch_profile,
+     switch_profile_len},
+#endif
 #if IS_ENABLED(CONFIG_MINIMALPAD_HOST_DIAL)
     {MP_CMD_SET_DIAL, sizeof(struct mp_set_dial), true, mp_host_handle_set_dial},
     {MP_CMD_GET_DIAL, sizeof(struct mp_get_dial), false, mp_host_handle_get_dial},
@@ -85,6 +113,9 @@ BUILD_ASSERT(sizeof(struct mp_set_profile) == 14, "SET_PROFILE carries 14 payloa
 BUILD_ASSERT(sizeof(struct mp_heartbeat) == 1, "HEARTBEAT carries 1 payload byte");
 BUILD_ASSERT(sizeof(struct mp_set_leds) == 4, "SET_LEDS carries 4 payload bytes");
 BUILD_ASSERT(sizeof(struct mp_enter_bootloader) == 4, "ENTER_BOOTLOADER carries 4 payload bytes");
+BUILD_ASSERT(SWITCH_PROFILE_MIN_LEN == 3, "SWITCH_PROFILE carries 3 payload bytes at the least");
+BUILD_ASSERT(sizeof(struct mp_switch_profile) == 17,
+             "SWITCH_PROFILE carries 17 payload bytes at the most");
 BUILD_ASSERT(sizeof(struct mp_set_lighting) == 8, "SET_LIGHTING carries 8 payload bytes");
 BUILD_ASSERT(sizeof(struct mp_lighting_state) == 9, "LIGHTING_STATE carries 9 payload bytes");
 BUILD_ASSERT(sizeof(struct mp_light) == 4, "A light is 4 bytes");
@@ -105,6 +136,18 @@ static const struct command *find_command(uint8_t id) {
     }
 
     return NULL;
+}
+
+/* The least payload this frame of `command` must carry: the command's minimum, or more when the
+ * payload says it holds more. */
+static size_t payload_needed(const struct command *command, const struct mp_host_reader *reader) {
+    const uint8_t length = reader->buf[2];
+
+    if (length < command->min_payload_len || !command->needed_len) {
+        return command->min_payload_len;
+    }
+
+    return command->needed_len(reader->buf + MP_HOST_HEADER_LEN);
 }
 
 static void dispatch(struct mp_host_reader *reader, const struct mp_host_transport *from) {
@@ -129,13 +172,14 @@ static void dispatch(struct mp_host_reader *reader, const struct mp_host_transpo
         return;
     }
 
-    if (header.length < command->min_payload_len) {
+    const size_t needed = payload_needed(command, reader);
+    if (header.length < needed) {
         // Well framed, still malformed: too short to hold this command. Too long is not an
         // error, because that is how the protocol grows; the handler reads the fields it knows
         // and leaves the rest.
         reader->rejected++;
         LOG_WRN("Rejecting command 0x%02x with %d payload bytes, expected at least %d",
-                header.command, header.length, command->min_payload_len);
+                header.command, header.length, (int)needed);
         mp_host_reject(from, header.command, MP_REJECTED_WRONG_LENGTH);
         return;
     }

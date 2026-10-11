@@ -50,9 +50,22 @@ config MINIMALPAD_HOST_HEARTBEAT_DEFAULT_TIMEOUT
     help
       host-protocol.md has Studio send HEARTBEAT every 2 seconds with a 6
       second window, and each HEARTBEAT sets the window from then on. Until
-      the first one arrives, SET_PROFILE and SET_LEDS arm the fallback with
-      this window, so a host that stops between switching and its first
-      heartbeat still cannot leave the pad on a profile (ADR 0005).
+      the first one arrives, SET_PROFILE, SWITCH_PROFILE and SET_LEDS arm the
+      fallback with this window, so a host that stops between switching and
+      its first heartbeat still cannot leave the pad on a profile (ADR 0005).
+
+config MINIMALPAD_PROFILE_LAYERS
+    bool "Several layers for one profile, switched on the pad"
+    default y
+    help
+      Profile layers, feature bit 0 of FEATURES. With each app switch Studio
+      sends SWITCH_PROFILE: the layer to show and the profile's layers, its
+      group, which the pad keeps in RAM, never saved, while Studio holds it.
+      The &profile_layer key then moves within the group on the pad itself,
+      Next layer, Go to and Hold for, with no round trip to the Mac, and
+      STATE's change byte tells Studio when a key moved the layer. Without
+      this, SWITCH_PROFILE is skipped as an unknown command and Studio
+      switches with SET_PROFILE.
 
 config MINIMALPAD_MAC_ACTION
     bool "The &mac_action key, which sends ACTION_EVENT to Studio"
