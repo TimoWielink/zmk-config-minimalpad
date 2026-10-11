@@ -302,7 +302,9 @@ void mp_host_switch_profile(zmk_keymap_layer_id_t id);
  * called with it released.
  *
  * Next, Go to and Hold for return 0, or -ENOENT when no group is held or the
- * target is not in it; then nothing changes.
+ * target is not in it; then nothing changes. A swap to the layer the pad is
+ * already on does nothing, except that a Next or Go to which ends a hold still
+ * sends STATE with change MP_LAYER_CHANGE_KEY.
  */
 
 /* Swaps to the layer after the current one in the group, wrapping round, or to

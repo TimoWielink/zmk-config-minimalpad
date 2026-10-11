@@ -95,6 +95,21 @@ static void swap_to(zmk_keymap_layer_id_t target, enum mp_layer_change change) {
     mp_host_set_layer(target, change);
 }
 
+/*
+ * The swap for Next and Go to. One that ends a hold always says so, even when it
+ * lands on the layer the hold was showing: nothing in the keymap moves, but the
+ * layer is now the key's choice rather than the hold's, and Studio learns that
+ * from STATE's change, which sends a STATE on its own (host.c, state_update()).
+ */
+static void key_swap_to(zmk_keymap_layer_id_t target, bool ended_hold) {
+    if (ended_hold && target == mp_host_layer()) {
+        mp_host_set_layer(target, MP_LAYER_CHANGE_KEY);
+        return;
+    }
+
+    swap_to(target, MP_LAYER_CHANGE_KEY);
+}
+
 int mp_profile_layer_next(void) {
     k_spinlock_key_t key = k_spin_lock(&profile_layers_lock);
 
@@ -115,10 +130,11 @@ int mp_profile_layer_next(void) {
     }
 
     // A key that moves the profile layer ends a hold, so its release does nothing.
+    const bool ended_hold = hold_token != 0;
     hold_token = 0;
     k_spin_unlock(&profile_layers_lock, key);
 
-    swap_to(target, MP_LAYER_CHANGE_KEY);
+    key_swap_to(target, ended_hold);
     return 0;
 }
 
@@ -131,10 +147,11 @@ int mp_profile_layer_go(zmk_keymap_layer_id_t target) {
         return -ENOENT;
     }
 
+    const bool ended_hold = hold_token != 0;
     hold_token = 0;
     k_spin_unlock(&profile_layers_lock, key);
 
-    swap_to(target, MP_LAYER_CHANGE_KEY);
+    key_swap_to(target, ended_hold);
     return 0;
 }
 
