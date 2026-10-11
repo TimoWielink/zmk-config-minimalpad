@@ -2,6 +2,11 @@
 
 What changed in each version of the MinimalPad firmware. How versions are numbered and released is in [docs/releasing.md](docs/releasing.md). A version's section here becomes the description of its GitHub Release, so write it for the people who will flash it.
 
+## 0.7.1
+
+- One click of the dial is now exactly one step: one volume step, one scroll, one key. Before, a click sometimes sent two, because the pad counted each click as one and two thirds of a step. A full turn is now 20 steps, one per click, where it was about 33.
+- Nothing else changes: your keys, layers, profiles, dial and lights are as you left them, and you don't need to pair the pad again.
+
 ## 0.7.0
 
 - MinimalPad Studio for Mac, from its next release, can change the pad's own lights: switch them on or off, and set their brightness, colour, effect and speed. The pad keeps what you choose, as it keeps changes made with the lights keys, so the lights stay that way without Studio, on any computer. While you're changing them they stay on, and they fade out once the pad has saved your change, about a minute after the last one.
