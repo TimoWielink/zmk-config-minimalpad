@@ -98,6 +98,22 @@ config MINIMALPAD_HOST_LIGHTING
       leaves until its next save of something else (ZMK issue #1920). The
       build advertises MP_CAP_LIGHTING in HELLO_ACK when this is on.
 
+config MINIMALPAD_HOST_LIGHTS
+    bool "Layer and key lights, kept on the pad and set from Studio"
+    depends on ZMK_RGB_UNDERGLOW
+    default y
+    help
+      GET_FEATURES, SET_LAYER_LIGHT, GET_LAYER_LIGHT, SHOW_PAD_LIGHTING,
+      SET_KEY_LIGHT and GET_KEY_LIGHTS: Studio gives a layer above Default a
+      light, and a key on any layer, Default included, a light of its own: a
+      colour, Off, or Inherit, which leaves the key to its layer and the layer
+      to the one below. The pad keeps them in its settings, saved once
+      changes have stopped for 2 seconds, so they last without Studio. While
+      the pad's own lighting is being changed, from Studio or with a key or
+      the dial, the pad shows it in their place. The build advertises
+      MP_CAP_FEATURES in HELLO_ACK, and layer and key lights in FEATURES,
+      when this is on.
+
 config MINIMALPAD_HOST_LEDS_FORCE_SOLID
     bool "Show a host colour with the solid effect"
     depends on ZMK_RGB_UNDERGLOW
@@ -113,6 +129,22 @@ module-str = Minimalpad host module
 source "subsys/logging/Kconfig.template.log_config"
 
 endif # MINIMALPAD_HOST
+
+config MINIMALPAD_LIGHT_LAYERS
+    bool "Draw layer and key lights over the underglow"
+    depends on DT_HAS_MINIMALPAD_LIGHT_LAYERS_ENABLED && ZMK_RGB_UNDERGLOW
+    default y
+    help
+      Puts an LED strip between ZMK's underglow and the WS2812 chain. The
+      underglow keeps drawing its effect, and this strip paints the light each
+      key resolves to (mp_lights_resolve(), src/host/lights.c) over that frame:
+      a colour at the underglow's current brightness, Off dark, and Inherit
+      leaving the underglow's own pixel. While the underglow is off, or the pad
+      is showing its own lighting, the frame passes through as it is.
+      Without the host module's lights (MINIMALPAD_HOST_LIGHTS) every key
+      resolves to Inherit, so the strip passes every frame through unchanged.
+      The shield's devicetree makes this strip the underglow's, so switching
+      it off needs the overlay's zmk,underglow pointed back at the chain.
 
 config MINIMALPAD_STUDIO_BLE
     bool "ZMK Studio over Bluetooth, with the connection leak fixed"

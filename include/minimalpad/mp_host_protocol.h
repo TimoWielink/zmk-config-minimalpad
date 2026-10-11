@@ -44,8 +44,12 @@
  * 4: SET_DIAL, GET_DIAL and DIAL_STATE, a dial for each layer kept on the pad,
  *    behind MP_CAP_LAYER_DIALS.
  * 5: GET_LIGHTING, SET_LIGHTING and LIGHTING_STATE, the pad's own lighting read
- *    and set from a host, behind MP_CAP_LIGHTING. */
-#define MP_HOST_PROTOCOL_VERSION 5
+ *    and set from a host, behind MP_CAP_LIGHTING.
+ * 6: GET_FEATURES and FEATURES, behind MP_CAP_FEATURES, and a light for each
+ *    layer and for each key, kept on the pad: SET_LAYER_LIGHT, GET_LAYER_LIGHT,
+ *    SHOW_PAD_LIGHTING, SET_KEY_LIGHT, GET_KEY_LIGHTS, LAYER_LIGHT_STATE and
+ *    KEY_LIGHTS_STATE, each behind a bit of FEATURES (MP_FEATURE_*). */
+#define MP_HOST_PROTOCOL_VERSION 6
 
 /* A frame never exceeds this, so it fits the smallest negotiated ATT MTU
  * (23 bytes, less 3 for the ATT header) without chunking. */
@@ -75,6 +79,13 @@ enum mp_host_command {
 	MP_CMD_GET_DIAL = 0x08,
 	MP_CMD_GET_LIGHTING = 0x09,
 	MP_CMD_SET_LIGHTING = 0x0A,
+	MP_CMD_GET_FEATURES = 0x0B,
+	/* 0x0C is kept for SWITCH_PROFILE, which several layers for one app adds. */
+	MP_CMD_SET_LAYER_LIGHT = 0x0D,
+	MP_CMD_GET_LAYER_LIGHT = 0x0E,
+	MP_CMD_SHOW_PAD_LIGHTING = 0x0F,
+	MP_CMD_SET_KEY_LIGHT = 0x10,
+	MP_CMD_GET_KEY_LIGHTS = 0x11,
 };
 
 /* Events, pad to host. */
@@ -88,6 +99,9 @@ enum mp_host_event {
 	MP_EVT_REJECTED = 0x87,
 	MP_EVT_DIAL_STATE = 0x88,
 	MP_EVT_LIGHTING_STATE = 0x89,
+	MP_EVT_FEATURES = 0x8A,
+	MP_EVT_LAYER_LIGHT_STATE = 0x8B,
+	MP_EVT_KEY_LIGHTS_STATE = 0x8C,
 };
 
 /* Guards MP_CMD_ENTER_BOOTLOADER, so a stray frame cannot reboot a pad. */
@@ -120,9 +134,35 @@ enum mp_host_event {
 #define MP_CAP_MAC_ACTIONS BIT(4) /* &mac_action keys send ACTION_EVENT */
 #define MP_CAP_LAYER_DIALS BIT(5) /* SET_DIAL, GET_DIAL and DIAL_STATE */
 #define MP_CAP_LIGHTING BIT(6) /* GET_LIGHTING, SET_LIGHTING and LIGHTING_STATE */
+#define MP_CAP_FEATURES BIT(7) /* GET_FEATURES and FEATURES */
 /* Bit 7 is the last one, and HELLO_ACK cannot grow a second caps byte: Studio
  * 0.1.0 to 0.3.0 read HELLO_ACK as exactly seven bytes and fail the handshake on
- * a longer one. Find another way to announce a feature before spending bit 7. */
+ * a longer one. So it announces GET_FEATURES, which answers with a bitmap of up
+ * to 128 features, and every feature after it is a bit of that bitmap. */
+
+/* Feature bits in FEATURES: 1-16 bytes of bitmap, bit n of byte n/8 is feature
+ * n. A pad sends as many bytes as its highest feature needs, and a feature past
+ * the end of the bitmap is one the pad does not have.
+ *
+ * - LAYER_LIGHTS: SET_LAYER_LIGHT, GET_LAYER_LIGHT, LAYER_LIGHT_STATE and
+ *   SHOW_PAD_LIGHTING.
+ * - KEY_LIGHTS: SET_KEY_LIGHT, GET_KEY_LIGHTS and KEY_LIGHTS_STATE. */
+#define MP_FEATURE_PROFILE_LAYERS 0 /* reserved: no firmware sets it yet */
+#define MP_FEATURE_LAYER_LIGHTS 1
+#define MP_FEATURE_KEY_LIGHTS 2
+
+/* What a light does, in mp_light.kind. A light is what the LEDs of a layer, or of
+ * one key on a layer, show (host-protocol.md, "Layer and key lights"). There is
+ * no brightness: a colour is drawn at the pad's own brightness. Inherit and Off
+ * carry a hue and a saturation of 0, in what a host sends and in every answer. */
+#define MP_LIGHT_INHERIT 0 /* passes on: a key to its layer, a layer to the one below */
+#define MP_LIGHT_COLOUR 1 /* a hue and a saturation */
+#define MP_LIGHT_OFF 2 /* dark, whatever lies below */
+
+/* The keys on the grid are positions 0-15. The dial button, position 16, has no
+ * LED and is never in a mask. A layer's key lights are read in six pages, named
+ * by the position of their first key: 0, 3, 6, 9, 12 and 15. The last holds key
+ * 15 alone. */
 
 /* What one dial value does, in SET_DIAL and DIAL_STATE, one per direction of
  * turn. It is a ZMK keycode, so modifier flags in bits 31-24, a HID usage page
@@ -306,6 +346,50 @@ struct mp_set_lighting {
 	uint8_t speed; /* MP_LIGHTING_SPEED_MIN-MP_LIGHTING_SPEED_MAX */
 } __packed;
 
+/* One light, in four bytes. Every light on the wire has this layout. */
+struct mp_light {
+	uint8_t kind; /* MP_LIGHT_* */
+	uint16_t hue; /* 0-359, 0 unless MP_LIGHT_COLOUR */
+	uint8_t saturation; /* 0-100, 0 unless MP_LIGHT_COLOUR */
+} __packed;
+
+/* MP_CMD_SET_LAYER_LIGHT: a layer's light, kept on the pad until changed. Default
+ * cannot have one. The pad answers the sender with LAYER_LIGHT_STATE. 5 bytes of
+ * payload. */
+struct mp_set_layer_light {
+	uint8_t layer_id;
+	struct mp_light light;
+} __packed;
+
+/* MP_CMD_GET_LAYER_LIGHT: the pad answers with LAYER_LIGHT_STATE. */
+struct mp_get_layer_light {
+	uint8_t layer_id;
+} __packed;
+
+/* MP_CMD_SHOW_PAD_LIGHTING: shows the pad's own lighting in place of layer and
+ * key lights for this many seconds from now. 0 stops. Nothing answers it but a
+ * REJECTED. */
+struct mp_show_pad_lighting {
+	uint8_t seconds;
+} __packed;
+
+/* MP_CMD_SET_KEY_LIGHT: one light for every key in keys, on one layer, in one
+ * frame. Bit n of keys is key position n, 0-15; 0 is out of range. The pad
+ * answers the sender with a KEY_LIGHTS_STATE for every page that holds a key in
+ * keys. 7 bytes of payload. */
+struct mp_set_key_light {
+	uint8_t layer_id;
+	uint16_t keys;
+	struct mp_light light;
+} __packed;
+
+/* MP_CMD_GET_KEY_LIGHTS: the lights of one page of a layer's keys. The pad
+ * answers with one KEY_LIGHTS_STATE. */
+struct mp_get_key_lights {
+	uint8_t layer_id;
+	uint8_t first; /* 0, 3, 6, 9, 12 or 15 */
+} __packed;
+
 /* MP_CMD_HEARTBEAT: the pad returns to Default when this window passes. */
 struct mp_heartbeat {
 	uint8_t timeout_seconds;
@@ -404,6 +488,32 @@ struct mp_lighting_state {
 	uint8_t effect; /* enum mp_lighting_effect */
 	uint8_t speed; /* 1-5, exact only with MP_LIGHTING_FLAG_SPEED_EXACT */
 	uint8_t effect_count; /* MP_LIGHTING_EFFECT_COUNT on this firmware */
+} __packed;
+
+/* MP_EVT_FEATURES: which features the pad has, the answer to GET_FEATURES, sent
+ * only to the host that asked. It is 1-16 bytes of bitmap with no struct: bit n
+ * of byte n/8 is feature n (MP_FEATURE_*), and the payload is as long as the pad's
+ * highest feature needs. A host reads up to 16 bytes and ignores what trails. */
+
+/* MP_EVT_LAYER_LIGHT_STATE: one layer's light, the answer to SET_LAYER_LIGHT and
+ * GET_LAYER_LIGHT, sent only to the host that asked. Default answers
+ * MP_LIGHT_INHERIT. 5 bytes of payload; a later revision adds fields to the end,
+ * so a host reads these five and ignores what trails them. */
+struct mp_layer_light_state {
+	uint8_t layer_id;
+	struct mp_light light;
+} __packed;
+
+/* MP_EVT_KEY_LIGHTS_STATE: the lights of up to three keys on one layer, the
+ * answer to SET_KEY_LIGHT and GET_KEY_LIGHTS, sent only to the host that asked.
+ * lights[0] is key position first, lights[1] is first + 1, and so on; count is
+ * 1-3 and first + count never passes 16. 3 + 4 * count bytes of payload, so 15
+ * at most. A host reads count lights and ignores what trails them. */
+struct mp_key_lights_state {
+	uint8_t layer_id;
+	uint8_t first;
+	uint8_t count;
+	struct mp_light lights[3]; /* the first count are sent */
 } __packed;
 
 /* MP_EVT_FALLBACK: the pad has returned to Default. */

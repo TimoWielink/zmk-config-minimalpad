@@ -46,8 +46,9 @@ struct command {
  * to the spec's numbers, so a header that drifts from the spec fails the build
  * instead of every frame on the pad.
  *
- * HELLO, GET_STATE, GET_DIAL and GET_LIGHTING change nothing, so any bonded host
- * gets an answer (host-protocol.md, "Which host is in charge").
+ * HELLO, GET_STATE, GET_DIAL, GET_LIGHTING, GET_FEATURES, GET_LAYER_LIGHT and
+ * GET_KEY_LIGHTS change nothing, so any bonded host gets an answer
+ * (host-protocol.md, "Which host is in charge").
  */
 static const struct command commands[] = {
     {MP_CMD_HELLO, 0, false, mp_host_handle_hello},
@@ -65,6 +66,18 @@ static const struct command commands[] = {
     {MP_CMD_GET_LIGHTING, 0, false, mp_host_handle_get_lighting},
     {MP_CMD_SET_LIGHTING, sizeof(struct mp_set_lighting), true, mp_host_handle_set_lighting},
 #endif
+#if IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTS)
+    {MP_CMD_GET_FEATURES, 0, false, mp_host_handle_get_features},
+    {MP_CMD_SET_LAYER_LIGHT, sizeof(struct mp_set_layer_light), true,
+     mp_host_handle_set_layer_light},
+    {MP_CMD_GET_LAYER_LIGHT, sizeof(struct mp_get_layer_light), false,
+     mp_host_handle_get_layer_light},
+    {MP_CMD_SHOW_PAD_LIGHTING, sizeof(struct mp_show_pad_lighting), true,
+     mp_host_handle_show_pad_lighting},
+    {MP_CMD_SET_KEY_LIGHT, sizeof(struct mp_set_key_light), true, mp_host_handle_set_key_light},
+    {MP_CMD_GET_KEY_LIGHTS, sizeof(struct mp_get_key_lights), false,
+     mp_host_handle_get_key_lights},
+#endif
 };
 
 BUILD_ASSERT(sizeof(struct mp_host_frame_header) == MP_HOST_HEADER_LEN);
@@ -74,6 +87,15 @@ BUILD_ASSERT(sizeof(struct mp_set_leds) == 4, "SET_LEDS carries 4 payload bytes"
 BUILD_ASSERT(sizeof(struct mp_enter_bootloader) == 4, "ENTER_BOOTLOADER carries 4 payload bytes");
 BUILD_ASSERT(sizeof(struct mp_set_lighting) == 8, "SET_LIGHTING carries 8 payload bytes");
 BUILD_ASSERT(sizeof(struct mp_lighting_state) == 9, "LIGHTING_STATE carries 9 payload bytes");
+BUILD_ASSERT(sizeof(struct mp_light) == 4, "A light is 4 bytes");
+BUILD_ASSERT(sizeof(struct mp_set_layer_light) == 5, "SET_LAYER_LIGHT carries 5 payload bytes");
+BUILD_ASSERT(sizeof(struct mp_get_layer_light) == 1, "GET_LAYER_LIGHT carries 1 payload byte");
+BUILD_ASSERT(sizeof(struct mp_show_pad_lighting) == 1, "SHOW_PAD_LIGHTING carries 1 payload byte");
+BUILD_ASSERT(sizeof(struct mp_set_key_light) == 7, "SET_KEY_LIGHT carries 7 payload bytes");
+BUILD_ASSERT(sizeof(struct mp_get_key_lights) == 2, "GET_KEY_LIGHTS carries 2 payload bytes");
+BUILD_ASSERT(sizeof(struct mp_layer_light_state) == 5, "LAYER_LIGHT_STATE carries 5 payload bytes");
+BUILD_ASSERT(sizeof(struct mp_key_lights_state) == 3 + 4 * 3,
+             "KEY_LIGHTS_STATE carries 3 + 4 bytes a light, for up to 3 lights");
 
 static const struct command *find_command(uint8_t id) {
     for (size_t i = 0; i < ARRAY_SIZE(commands); i++) {

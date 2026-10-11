@@ -56,6 +56,9 @@ if(CONFIG_MINIMALPAD_HOST)
   target_sources_ifdef(CONFIG_MINIMALPAD_HOST_LIGHTING app PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/host/lighting.c
   )
+  target_sources_ifdef(CONFIG_MINIMALPAD_HOST_LIGHTS app PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/host/lights.c
+  )
 endif()
 
 target_sources_ifdef(CONFIG_MINIMALPAD_STUDIO_BLE app PRIVATE
@@ -64,4 +67,11 @@ target_sources_ifdef(CONFIG_MINIMALPAD_STUDIO_BLE app PRIVATE
 
 if(CONFIG_MINIMALPAD_LEDS_IDLE_FADE)
   target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/leds/idle_fade.c)
+endif()
+
+# The shield's devicetree makes the light layers the underglow's strip, so they
+# are built with or without the host module (their lights are Inherit without it).
+if(CONFIG_MINIMALPAD_LIGHT_LAYERS)
+  target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/leds/light_layers.c)
 endif()

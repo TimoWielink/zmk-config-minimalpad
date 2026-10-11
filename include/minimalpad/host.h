@@ -1,8 +1,8 @@
 /*
  * Minimalpad host module
  *
- * What the frame reader (frame.c), the core (host.c, with dial.c and
- * lighting.c) and the transports share. The wire format itself lives in
+ * What the frame reader (frame.c), the core (host.c, with dial.c, lighting.c
+ * and lights.c) and the transports share. The wire format itself lives in
  * mp_host_protocol.h, a verbatim copy of
  * minimalpad-studio-mac/docs/protocol/mp_host_protocol.h: change it there.
  *
@@ -82,7 +82,7 @@ void mp_host_reader_reset(struct mp_host_reader *reader);
 /*
  * Command handlers, host.c. frame.c calls them with a payload whose length
  * already matches the command's struct in mp_host_protocol.h (none for HELLO,
- * GET_STATE and GET_LIGHTING). Replies go back through `from`.
+ * GET_STATE, GET_LIGHTING and GET_FEATURES). Replies go back through `from`.
  */
 void mp_host_handle_hello(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_set_profile(const struct mp_host_transport *from, const uint8_t *payload);
@@ -103,6 +103,14 @@ void mp_host_handle_get_dial(const struct mp_host_transport *from, const uint8_t
 /* src/host/lighting.c, built with CONFIG_MINIMALPAD_HOST_LIGHTING. */
 void mp_host_handle_get_lighting(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_set_lighting(const struct mp_host_transport *from, const uint8_t *payload);
+/* src/host/lights.c, built with CONFIG_MINIMALPAD_HOST_LIGHTS. */
+void mp_host_handle_get_features(const struct mp_host_transport *from, const uint8_t *payload);
+void mp_host_handle_set_layer_light(const struct mp_host_transport *from, const uint8_t *payload);
+void mp_host_handle_get_layer_light(const struct mp_host_transport *from, const uint8_t *payload);
+void mp_host_handle_show_pad_lighting(const struct mp_host_transport *from,
+                                      const uint8_t *payload);
+void mp_host_handle_set_key_light(const struct mp_host_transport *from, const uint8_t *payload);
+void mp_host_handle_get_key_lights(const struct mp_host_transport *from, const uint8_t *payload);
 
 /*
  * Answers a dropped command with REJECTED, to the host that sent it only. A
@@ -169,6 +177,46 @@ static inline void mp_host_lighting_changed(void) {}
 static inline void mp_host_lighting_speed_stepped(int steps) { (void)steps; }
 
 #endif /* IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTING) */
+
+#if IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTS)
+
+/*
+ * The light a key shows, resolved top-down over the active layers; kind
+ * MP_LIGHT_INHERIT means the underglow's own pixel. `position` is a key
+ * position, 0-15; any other is Inherit. The hue is in CPU byte order. Safe from
+ * any thread.
+ */
+struct mp_light mp_lights_resolve(uint8_t position);
+
+/*
+ * Shows the pad's own lighting in place of layer and key lights for `ms` from
+ * now, so a change to it can be seen. A call with `ms` above 0 renews the show
+ * to `ms` from then, but never shortens one that lasts longer, and 0 ends it at
+ * once. SHOW_PAD_LIGHTING asks for it while Studio's Lights popover is open, and
+ * lighting.c asks for it when a key or the dial changes the pad's colour,
+ * effect or speed. Safe from any thread.
+ */
+void mp_lights_show_pad(uint32_t ms);
+
+/*
+ * Whether the pad's own lighting is being shown, so the renderer
+ * (src/leds/light_layers.c) passes every pixel of the underglow through. Safe
+ * from any thread.
+ */
+bool mp_lights_showing_pad(void);
+
+#else
+
+static inline void mp_lights_show_pad(uint32_t ms) { (void)ms; }
+
+static inline struct mp_light mp_lights_resolve(uint8_t position) {
+    (void)position;
+    return (struct mp_light){.kind = MP_LIGHT_INHERIT};
+}
+
+static inline bool mp_lights_showing_pad(void) { return false; }
+
+#endif /* IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTS) */
 
 #if IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW)
 

@@ -628,13 +628,15 @@ void mp_host_handle_hello(const struct mp_host_transport *from, const uint8_t *p
         // The Bluetooth slot is claimed on every build, including one without Bluetooth, where
         // the byte can only say MP_BT_PROFILE_NONE: the bit promises the host that STATE
         // carries the field, not that the pad has a slot to report.
-        // Mac actions are claimed when the &mac_action behavior is compiled in, and lighting
-        // when src/host/lighting.c is.
+        // Mac actions are claimed when the &mac_action behavior is compiled in, lighting
+        // when src/host/lighting.c is, and features when src/host/lights.c is, which answers
+        // GET_FEATURES.
         .caps = MP_CAP_PROFILES | MP_CAP_BT_PROFILE |
                 (IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW) ? MP_CAP_LEDS : 0) |
                 (IS_ENABLED(CONFIG_MINIMALPAD_MAC_ACTION) ? MP_CAP_MAC_ACTIONS : 0) |
                 (IS_ENABLED(CONFIG_MINIMALPAD_HOST_DIAL) ? MP_CAP_LAYER_DIALS : 0) |
-                (IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTING) ? MP_CAP_LIGHTING : 0),
+                (IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTING) ? MP_CAP_LIGHTING : 0) |
+                (IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTS) ? MP_CAP_FEATURES : 0),
         .layer_count = ZMK_KEYMAP_LAYERS_LEN,
         .free_layers = free_layer_slots(),
     };

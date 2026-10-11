@@ -6,9 +6,23 @@
 #define NC 0xFFFFFFFF  /* Use to signal that a pin is not connected */
 
 / {
+    // Layer and key lights, drawn over the underglow's frame on its way to the
+    // chain (src/leds/light_layers.c). It is the underglow's strip on every
+    // build, and passes every frame through when the host lights are off. The
+    // chain snakes along the rows: row 1 left to right, row 2 right to left, and
+    // so on (PCB LED1 to LED16), so key-positions lists the key each LED sits
+    // under, in chain order.
+    light_layers: light_layers {
+        compatible = "minimalpad,light-layers";
+        led-strip = <&led_strip>;
+        chain-length = <16>;
+        key-positions = <0 1 2 3 7 6 5 4 8 9 10 11 15 14 13 12>;
+    };
+
     chosen {
         zmk,kscan = &kscan0;
-        zmk,underglow = &led_strip;
+        // The underglow draws into the light layers, which pass on to the chain.
+        zmk,underglow = &light_layers;
         zmk,physical-layout = &minimalpad_physical_layout;
     };
 
