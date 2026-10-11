@@ -5,10 +5,10 @@ What changed in each version of the MinimalPad firmware. How versions are number
 ## 0.8.0
 
 - Each layer, and each key, can have a light of its own. In MinimalPad Studio for Mac 0.5.0, give a layer a colour and the pad turns that colour while you're on that layer, or give a key its own colour, or switch its light off. The pad keeps them, so they work without Studio running, on any computer.
-- That includes the Default layer's keys. A key such as Play / Pause can stay one colour all the time, with Studio quit. Default has no light for the whole layer, because the pad's own lighting is Default's.
+- That includes the Default layer's keys. A key such as Play / Pause can stay one colour on Default, even with Studio quit. Default has no light for the whole layer, because the pad's own lighting is Default's.
 - A key without a light of its own shows its layer's, and a layer without one shows the layer below it, down to the pad's own lighting.
-- The colours follow the pad's brightness, the idle fade and lights off. The brightness keys and the dial dim and brighten them, they fade out when the pad is idle and a key wakes them. If you've switched the lights off, they stay dark: a layer or key light never switches them on.
-- While you change the pad's own colour, effect or speed with its keys or the dial, the pad shows its own lighting for about 3 seconds, so you can see the change under the layer and key lights. Studio does the same while its Lights popover is open.
+- The colours follow the pad's brightness, the idle fade and lights off. The brightness keys and the dial dim and brighten them; they fade out when the pad is idle and a key wakes them. If you've switched the lights off, they stay dark: a layer or key light never switches them on.
+- While you change the pad's own colour, effect or speed with its keys or the dial, the pad shows its own lighting for about 3 seconds, so you can see the change even where a layer or key light would cover it. Studio does the same while its Lights popover is open.
 - The pad saves a light about 2 seconds after your last change.
 - Nothing else changes: your keys, layers, profiles, dial and lights are as you left them, and you don't need to pair the pad again. An older Studio works as it always did.
 

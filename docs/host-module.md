@@ -511,7 +511,7 @@ Firmware 0.8.0's layer and key lights, measured on 11 Oct 2026 the same way, tak
 
 ## Testing
 
-Flash a spare pad first, since the Studio build changes the layer count. The checklist is in the MinimalPad Studio for Mac repo, `.scratch/host-module/issues/01-test-on-a-pad.md`. Bluetooth Profile switching has passed. USB switching, USB fallback and the lighting cases remain to be run on hardware, and so does the 0.8.0 checklist for layer and key lights, in `.scratch/lights/issues/08-firmware-080-release.md` in that repo. Only the renderer and the LED map have been proven on a pad, by a spike.
+Flash a spare pad first, since the Studio build changes the layer count. The checklist is in the MinimalPad Studio for Mac repo, `.scratch/host-module/issues/01-test-on-a-pad.md`. Bluetooth Profile switching has passed. USB switching, USB fallback and the lighting cases remain to be run on hardware, and so does the 0.8.0 checklist for layer and key lights, whose results go in the 0.8.0 pull request. Only the renderer and the LED map have been proven on a pad, by a spike.
 
 ## Building locally
 

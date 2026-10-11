@@ -72,7 +72,7 @@ static int light_layers_update_rgb(const struct device *dev, struct led_rgb *pix
     bool on = false;
     if (zmk_rgb_underglow_get_state(&on) != 0 || !on || mp_lights_showing_pad()) {
         // Off is the person's: the dark frame ZMK sends goes through as it is.
-        // So does the underglow's own frame while Studio is showing it.
+        // So does the underglow's own frame while the pad is showing its own lighting.
         return led_strip_update_rgb(chain, pixels, num_pixels);
     }
 

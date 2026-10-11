@@ -137,8 +137,8 @@ config MINIMALPAD_LIGHT_LAYERS
       underglow keeps drawing its effect, and this strip paints the light each
       key resolves to (mp_lights_resolve(), src/host/lights.c) over that frame:
       a colour at the underglow's current brightness, Off dark, and Inherit
-      leaving the underglow's own pixel. While the underglow is off, or Studio
-      is showing the pad's own lighting, the frame passes through as it is.
+      leaving the underglow's own pixel. While the underglow is off, or the pad
+      is showing its own lighting, the frame passes through as it is.
       Without the host module's lights (MINIMALPAD_HOST_LIGHTS) every key
       resolves to Inherit, so the strip passes every frame through unchanged.
       The shield's devicetree makes this strip the underglow's, so switching
