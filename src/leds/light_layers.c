@@ -34,9 +34,17 @@
 
 #define CHAIN_LENGTH DT_INST_PROP(0, chain_length)
 
+// After the WS2812 chain (CONFIG_LED_STRIP_INIT_PRIORITY), before ZMK's
+// underglow (APPLICATION).
+#define LIGHT_LAYERS_INIT_PRIORITY 99
+
 static const struct device *const chain = DEVICE_DT_GET(DT_INST_PHANDLE(0, led_strip));
 static const uint8_t key_positions[] = DT_INST_PROP(0, key_positions);
 BUILD_ASSERT(ARRAY_SIZE(key_positions) == CHAIN_LENGTH, "one key position per LED");
+BUILD_ASSERT(CHAIN_LENGTH == DT_PROP(DT_INST_PHANDLE(0, led_strip), chain_length),
+             "the light layers are as long as the chain they feed");
+BUILD_ASSERT(CONFIG_LED_STRIP_INIT_PRIORITY < LIGHT_LAYERS_INIT_PRIORITY,
+             "the chain is ready before the light layers check it");
 
 /* The same conversion as ZMK's own (rgb_underglow.c keeps it private). */
 static struct led_rgb hsb_to_rgb(uint16_t hue, uint8_t sat, uint8_t bri) {
@@ -104,6 +112,5 @@ static const struct led_strip_driver_api light_layers_api = {
     .length = light_layers_length,
 };
 
-// After the WS2812 chain (CONFIG_LED_STRIP_INIT_PRIORITY), before ZMK's
-// underglow (APPLICATION).
-DEVICE_DT_INST_DEFINE(0, light_layers_init, NULL, NULL, NULL, POST_KERNEL, 99, &light_layers_api);
+DEVICE_DT_INST_DEFINE(0, light_layers_init, NULL, NULL, NULL, POST_KERNEL,
+                      LIGHT_LAYERS_INIT_PRIORITY, &light_layers_api);
