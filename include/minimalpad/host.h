@@ -297,14 +297,18 @@ void mp_host_switch_profile(zmk_keymap_layer_id_t id);
  * The layers of the profile a host holds, src/host/profile_layers.c
  * (host-protocol.md, "Profile layers"). SWITCH_PROFILE sets the group;
  * &profile_layer keys move within it by swapping the profile layer, which
- * leaves every other active layer as it is. Call from a behavior or the system
- * work queue. One spinlock guards the group and the hold, and the keymap is
- * called with it released.
+ * leaves every other active layer as it is. One spinlock guards the group and
+ * the hold, and the keymap is called with it released. It does not guard
+ * mp_host_layer(), which a swap reads and writes outside it, so call these
+ * from the system work queue, as every caller does at the ZMK revision pinned
+ * in config/west.yml (9ebbeff): the transports' commands, the matrix scan and
+ * the sensors, and so the behaviors ZMK raises from them.
  *
  * Next, Go to and Hold for return 0, or -ENOENT when no group is held or the
  * target is not in it; then nothing changes. A swap to the layer the pad is
  * already on does nothing, except that a Next or Go to which ends a hold still
- * sends STATE with change MP_LAYER_CHANGE_KEY.
+ * sends STATE with change MP_LAYER_CHANGE_KEY, and so does a release which ends
+ * one on the layer already shown, with MP_LAYER_CHANGE_HOLD_ENDED.
  */
 
 /* Swaps to the layer after the current one in the group, wrapping round, or to

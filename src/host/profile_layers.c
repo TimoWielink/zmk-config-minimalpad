@@ -17,12 +17,15 @@
  * Nothing here is saved. The group belongs to the host holding the pad, and a
  * pad that restarts is held by no host.
  *
- * Threading: host commands run on the system work queue and &profile_layer in
- * ZMK's event context, which ZMK also runs from the system work queue on this
- * pad. Rather than lean on that, one spinlock guards the group and the hold, so
- * they are always read and changed whole. The keymap is called with it
- * released: a layer change raises an event, and its listeners must not run
- * under a spinlock.
+ * Threading: one spinlock guards the group and the hold, so they are always read
+ * and changed whole, and the keymap is called with it released: a layer change
+ * raises an event, and its listeners must not run under a spinlock. It does not
+ * guard host_layer (host.c), whose read, swap and write happen outside it, so
+ * the order of swaps rests on every caller running on the system work queue:
+ * both transports' commands, the matrix scan (physical_layouts.c hands its key
+ * events to it), the sensors (sensors.c), and so the behaviors ZMK raises from
+ * them, as they all do at the ZMK revision config/west.yml pins (9ebbeff). A
+ * caller on another thread would race a swap with host_layer.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -200,9 +203,20 @@ void mp_profile_layer_release(uint32_t token) {
 
     k_spin_unlock(&profile_layers_lock, key);
 
-    if (current) {
-        swap_to(back, MP_LAYER_CHANGE_HOLD_ENDED);
+    if (!current) {
+        return;
     }
+
+    // The release can find the pad on the layer it goes back to already: a hold for the layer the
+    // pad was on, or a newest hold that went back to the layer the first left. Nothing in the
+    // keymap moves, but the hold is over, and Studio learns that from STATE's change, as
+    // key_swap_to() has it for a key.
+    if (back == mp_host_layer()) {
+        mp_host_set_layer(back, MP_LAYER_CHANGE_HOLD_ENDED);
+        return;
+    }
+
+    swap_to(back, MP_LAYER_CHANGE_HOLD_ENDED);
 }
 
 void mp_profile_layers_clear(void) {
@@ -287,6 +301,11 @@ void mp_host_handle_switch_profile(const struct mp_host_transport *from, const u
             return;
         }
     }
+
+    // The frame's ids are bytes and the group's are zmk_keymap_layer_id_t, so the copy below
+    // holds only while that is one byte.
+    BUILD_ASSERT(sizeof(zmk_keymap_layer_id_t) == 1,
+                 "The group is copied from the frame's one-byte layer ids with memcpy");
 
     // A hold from before the switch ends with it, so its key's release does nothing.
     k_spinlock_key_t key = k_spin_lock(&profile_layers_lock);
