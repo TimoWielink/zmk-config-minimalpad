@@ -186,12 +186,22 @@ static inline void mp_host_lighting_speed_stepped(int steps) { (void)steps; }
  */
 struct mp_light mp_lights_resolve(uint8_t position);
 
+/*
+ * Whether Studio is showing the pad's own lighting in place of layer and key
+ * lights, so the renderer (src/leds/light_layers.c) passes every pixel of the
+ * underglow through. Never, until SHOW_PAD_LIGHTING is handled. Safe from any
+ * thread.
+ */
+static inline bool mp_lights_showing_pad(void) { return false; }
+
 #else
 
 static inline struct mp_light mp_lights_resolve(uint8_t position) {
     (void)position;
     return (struct mp_light){.kind = MP_LIGHT_INHERIT};
 }
+
+static inline bool mp_lights_showing_pad(void) { return false; }
 
 #endif /* IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTS) */
 
