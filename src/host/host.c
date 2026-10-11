@@ -63,7 +63,7 @@
 LOG_MODULE_REGISTER(minimalpad_host, CONFIG_MINIMALPAD_HOST_LOG_LEVEL);
 
 BUILD_ASSERT(sizeof(struct mp_hello_ack) == 7, "HELLO_ACK carries 7 payload bytes");
-BUILD_ASSERT(sizeof(struct mp_state_event) == 6, "STATE carries 6 payload bytes");
+BUILD_ASSERT(sizeof(struct mp_state_event) == 7, "STATE carries 7 payload bytes");
 BUILD_ASSERT(sizeof(struct mp_fallback_event) == 1, "FALLBACK carries 1 payload byte");
 BUILD_ASSERT(sizeof(struct mp_rejected_event) == 2, "REJECTED carries 2 payload bytes");
 
@@ -452,6 +452,9 @@ static struct mp_state_event current_state(void) {
         .battery = battery_percent(),
         .leds_on = leds_on(),
         .bt_profile = state_bt_profile(),
+        // Nothing moves the layer except the host yet; the &profile_layer behavior will say when
+        // a key did.
+        .change = MP_LAYER_CHANGE_HOST,
     };
 }
 
@@ -628,15 +631,14 @@ void mp_host_handle_hello(const struct mp_host_transport *from, const uint8_t *p
         // The Bluetooth slot is claimed on every build, including one without Bluetooth, where
         // the byte can only say MP_BT_PROFILE_NONE: the bit promises the host that STATE
         // carries the field, not that the pad has a slot to report.
-        // Mac actions are claimed when the &mac_action behavior is compiled in, lighting
-        // when src/host/lighting.c is, and features when src/host/lights.c is, which answers
-        // GET_FEATURES.
-        .caps = MP_CAP_PROFILES | MP_CAP_BT_PROFILE |
+        // Mac actions are claimed when the &mac_action behavior is compiled in, and lighting
+        // when src/host/lighting.c is. Features are claimed on every build, because the core
+        // answers GET_FEATURES, with an empty bitmap if it has to.
+        .caps = MP_CAP_PROFILES | MP_CAP_BT_PROFILE | MP_CAP_FEATURES |
                 (IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW) ? MP_CAP_LEDS : 0) |
                 (IS_ENABLED(CONFIG_MINIMALPAD_MAC_ACTION) ? MP_CAP_MAC_ACTIONS : 0) |
                 (IS_ENABLED(CONFIG_MINIMALPAD_HOST_DIAL) ? MP_CAP_LAYER_DIALS : 0) |
-                (IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTING) ? MP_CAP_LIGHTING : 0) |
-                (IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTS) ? MP_CAP_FEATURES : 0),
+                (IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTING) ? MP_CAP_LIGHTING : 0),
         .layer_count = ZMK_KEYMAP_LAYERS_LEN,
         .free_layers = free_layer_slots(),
     };
@@ -775,6 +777,30 @@ void mp_host_handle_get_state(const struct mp_host_transport *from, const uint8_
 
     const struct mp_state_event state = current_state();
     mp_host_reply(from, MP_EVT_STATE, &state, sizeof(state));
+}
+
+/*
+ * One byte holds every feature this firmware has so far. FEATURES is a bitmap
+ * that grows at the end, so a feature past the last byte sent is one the pad
+ * does not have (host-protocol.md, "Features").
+ */
+uint8_t mp_host_features(void) {
+    uint8_t features = 0;
+
+    if (IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTS)) {
+        features |= BIT(MP_FEATURE_LAYER_LIGHTS) | BIT(MP_FEATURE_KEY_LIGHTS);
+    }
+
+    return features;
+}
+
+void mp_host_handle_get_features(const struct mp_host_transport *from, const uint8_t *payload) {
+    ARG_UNUSED(payload);
+
+    // Always one byte, even when it is 0x00: a build without any feature still answers, so a host
+    // that asked can tell "none" from "this pad does not know the question".
+    const uint8_t features = mp_host_features();
+    mp_host_reply(from, MP_EVT_FEATURES, &features, sizeof(features));
 }
 
 /*

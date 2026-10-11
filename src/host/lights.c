@@ -5,9 +5,9 @@
  * Default included, a light of its own (host-protocol.md, "Layer and key
  * lights"). A light is Inherit, a colour or Off. Studio sets them with
  * SET_LAYER_LIGHT and SET_KEY_LIGHT and reads them back with GET_LAYER_LIGHT
- * and GET_KEY_LIGHTS, and finds out the pad has them with GET_FEATURES. They
- * are saved in the pad's settings by layer id, as dials are, so they last
- * through restarts and work without Studio.
+ * and GET_KEY_LIGHTS, and finds out the pad has them with GET_FEATURES, which
+ * host.c answers. They are saved in the pad's settings by layer id, as dials
+ * are, so they last through restarts and work without Studio.
  *
  * mp_lights_resolve() says which light a key shows: walking the active layers
  * from the top down to Default, the first key light or layer light that is not
@@ -333,14 +333,6 @@ static void send_key_lights_state(const struct mp_host_transport *to, uint8_t la
 /*
  * Commands
  */
-
-void mp_host_handle_get_features(const struct mp_host_transport *from, const uint8_t *payload) {
-    ARG_UNUSED(payload);
-
-    // One byte holds every feature this firmware has.
-    const uint8_t features = BIT(MP_FEATURE_LAYER_LIGHTS) | BIT(MP_FEATURE_KEY_LIGHTS);
-    mp_host_reply(from, MP_EVT_FEATURES, &features, sizeof(features));
-}
 
 void mp_host_handle_set_layer_light(const struct mp_host_transport *from,
                                     const uint8_t *payload) {

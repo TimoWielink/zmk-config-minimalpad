@@ -48,8 +48,12 @@
  * 6: GET_FEATURES and FEATURES, behind MP_CAP_FEATURES, and a light for each
  *    layer and for each key, kept on the pad: SET_LAYER_LIGHT, GET_LAYER_LIGHT,
  *    SHOW_PAD_LIGHTING, SET_KEY_LIGHT, GET_KEY_LIGHTS, LAYER_LIGHT_STATE and
- *    KEY_LIGHTS_STATE, each behind a bit of FEATURES (MP_FEATURE_*). */
-#define MP_HOST_PROTOCOL_VERSION 6
+ *    KEY_LIGHTS_STATE, each behind a bit of FEATURES (MP_FEATURE_*).
+ * 7: several layers for one profile, behind MP_FEATURE_PROFILE_LAYERS:
+ *    SWITCH_PROFILE, which tells the pad the layers of the profile it holds, and
+ *    STATE grew mp_state_event.change. The &profile_layer behavior moves between
+ *    the layers on the pad itself. */
+#define MP_HOST_PROTOCOL_VERSION 7
 
 /* A frame never exceeds this, so it fits the smallest negotiated ATT MTU
  * (23 bytes, less 3 for the ATT header) without chunking. */
@@ -80,7 +84,7 @@ enum mp_host_command {
 	MP_CMD_GET_LIGHTING = 0x09,
 	MP_CMD_SET_LIGHTING = 0x0A,
 	MP_CMD_GET_FEATURES = 0x0B,
-	/* 0x0C is kept for SWITCH_PROFILE, which several layers for one app adds. */
+	MP_CMD_SWITCH_PROFILE = 0x0C,
 	MP_CMD_SET_LAYER_LIGHT = 0x0D,
 	MP_CMD_GET_LAYER_LIGHT = 0x0E,
 	MP_CMD_SHOW_PAD_LIGHTING = 0x0F,
@@ -144,12 +148,31 @@ enum mp_host_event {
  * n. A pad sends as many bytes as its highest feature needs, and a feature past
  * the end of the bitmap is one the pad does not have.
  *
+ * - PROFILE_LAYERS: SWITCH_PROFILE, the &profile_layer behavior, and the change
+ *   byte on the end of STATE. Set by firmware 0.9.0.
  * - LAYER_LIGHTS: SET_LAYER_LIGHT, GET_LAYER_LIGHT, LAYER_LIGHT_STATE and
  *   SHOW_PAD_LIGHTING.
  * - KEY_LIGHTS: SET_KEY_LIGHT, GET_KEY_LIGHTS and KEY_LIGHTS_STATE. */
-#define MP_FEATURE_PROFILE_LAYERS 0 /* reserved: no firmware sets it yet */
+#define MP_FEATURE_PROFILE_LAYERS 0 /* SWITCH_PROFILE, &profile_layer and STATE's change */
 #define MP_FEATURE_LAYER_LIGHTS 1
 #define MP_FEATURE_KEY_LIGHTS 2
+
+/* Profile layers (host-protocol.md, "Profile layers"): a profile can have several
+ * layers, and the pad moves between them itself. SWITCH_PROFILE hands the pad the
+ * profile's layers, its group, in the order Next goes through them. The pad keeps
+ * the group in RAM only while it holds the profile, and a group is at most this
+ * many layer ids. */
+#define MP_SWITCH_PROFILE_GROUP_MAX 15
+
+/* Why the layer changed, in mp_state_event.change: it explains a change of
+ * layer_id. A value above MP_LAYER_CHANGE_HOLD_ENDED is one a later revision adds,
+ * and a host reads it as MP_LAYER_CHANGE_HOST. */
+enum mp_layer_change {
+	MP_LAYER_CHANGE_HOST = 0, /* the host, or anything else */
+	MP_LAYER_CHANGE_KEY = 1, /* a Next layer or Go to key */
+	MP_LAYER_CHANGE_HOLD_BEGAN = 2, /* a Hold for key went down */
+	MP_LAYER_CHANGE_HOLD_ENDED = 3, /* a Hold for key came up */
+};
 
 /* What a light does, in mp_light.kind. A light is what the LEDs of a layer, or of
  * one key on a layer, show (host-protocol.md, "Layer and key lights"). There is
@@ -317,6 +340,21 @@ struct mp_set_profile {
 	uint32_t dial_ccw; /* ignored */
 } __packed;
 
+/* MP_CMD_SWITCH_PROFILE: SET_PROFILE with no flags, plus the profile's layers, in
+ * one frame, so a switch cannot half-apply. layer_id is the layer to switch to and
+ * layer_ids are all of the profile's layers in the order Next goes through them,
+ * layer_id among them; none may be Default or appear twice, and each must be a
+ * layer in the keymap. Only count ids are sent, so the payload is 2 + count bytes:
+ * 3 at the least, and sizeof(struct mp_switch_profile), 17, at the most. A later
+ * revision may add fields after the ids. The pad answers with STATE, or with
+ * REJECTED. Only the active host may send it, and only to a pad with
+ * MP_FEATURE_PROFILE_LAYERS. */
+struct mp_switch_profile {
+	uint8_t layer_id; /* ZMK stable layer id, not the index */
+	uint8_t count; /* 1-MP_SWITCH_PROFILE_GROUP_MAX */
+	uint8_t layer_ids[MP_SWITCH_PROFILE_GROUP_MAX]; /* the first count are sent */
+} __packed;
+
 /* MP_CMD_SET_DIAL: what turning the dial does on one layer, kept on the pad
  * until changed. The pad answers with DIAL_STATE. 10 bytes of payload. */
 struct mp_set_dial {
@@ -459,6 +497,12 @@ struct mp_state_event {
 	 * A host that predates it reads the five bytes it knows and ignores this
 	 * one, which is why the field goes on the end and not beside endpoint. */
 	uint8_t bt_profile; /* 0-4, the &bt BT_SEL slot, or MP_BT_PROFILE_NONE */
+	/* Added in revision 7, so it is sent only by firmware with
+	 * MP_FEATURE_PROFILE_LAYERS, and after bt_profile: a pad that sends it always
+	 * sends bt_profile before it, MP_BT_PROFILE_NONE if it has no slot. It explains
+	 * a change of layer_id. Older firmware sends six bytes or five, and a host
+	 * reads that as nothing known about why, not as MP_LAYER_CHANGE_HOST. */
+	uint8_t change; /* enum mp_layer_change */
 } __packed;
 
 /* MP_EVT_DIAL_STATE: one layer's dial, the answer to SET_DIAL and GET_DIAL,

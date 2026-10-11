@@ -58,6 +58,7 @@ static const struct command commands[] = {
     {MP_CMD_ENTER_BOOTLOADER, sizeof(struct mp_enter_bootloader), true,
      mp_host_handle_enter_bootloader},
     {MP_CMD_GET_STATE, 0, false, mp_host_handle_get_state},
+    {MP_CMD_GET_FEATURES, 0, false, mp_host_handle_get_features},
 #if IS_ENABLED(CONFIG_MINIMALPAD_HOST_DIAL)
     {MP_CMD_SET_DIAL, sizeof(struct mp_set_dial), true, mp_host_handle_set_dial},
     {MP_CMD_GET_DIAL, sizeof(struct mp_get_dial), false, mp_host_handle_get_dial},
@@ -67,7 +68,6 @@ static const struct command commands[] = {
     {MP_CMD_SET_LIGHTING, sizeof(struct mp_set_lighting), true, mp_host_handle_set_lighting},
 #endif
 #if IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTS)
-    {MP_CMD_GET_FEATURES, 0, false, mp_host_handle_get_features},
     {MP_CMD_SET_LAYER_LIGHT, sizeof(struct mp_set_layer_light), true,
      mp_host_handle_set_layer_light},
     {MP_CMD_GET_LAYER_LIGHT, sizeof(struct mp_get_layer_light), false,

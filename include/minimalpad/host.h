@@ -90,6 +90,7 @@ void mp_host_handle_heartbeat(const struct mp_host_transport *from, const uint8_
 void mp_host_handle_set_leds(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_enter_bootloader(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_get_state(const struct mp_host_transport *from, const uint8_t *payload);
+void mp_host_handle_get_features(const struct mp_host_transport *from, const uint8_t *payload);
 /* src/host/dial.c, built with CONFIG_MINIMALPAD_HOST_DIAL. */
 /*
  * The dial value a turn gets when ZMK gave it to the &host_dial binding on
@@ -104,7 +105,6 @@ void mp_host_handle_get_dial(const struct mp_host_transport *from, const uint8_t
 void mp_host_handle_get_lighting(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_set_lighting(const struct mp_host_transport *from, const uint8_t *payload);
 /* src/host/lights.c, built with CONFIG_MINIMALPAD_HOST_LIGHTS. */
-void mp_host_handle_get_features(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_set_layer_light(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_get_layer_light(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_show_pad_lighting(const struct mp_host_transport *from,
@@ -252,3 +252,10 @@ int mp_host_set_own_effect(uint8_t effect);
  * reserved slot no layer has taken.
  */
 bool mp_host_layer_in_keymap(uint8_t id);
+
+/*
+ * The features this build has, as the first byte of FEATURES: one bit for each
+ * MP_FEATURE_* the build carries. GET_FEATURES answers with it, and a build
+ * without any answers 0x00. Safe from any thread.
+ */
+uint8_t mp_host_features(void);
