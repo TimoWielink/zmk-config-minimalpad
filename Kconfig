@@ -98,6 +98,20 @@ config MINIMALPAD_HOST_LIGHTING
       leaves until its next save of something else (ZMK issue #1920). The
       build advertises MP_CAP_LIGHTING in HELLO_ACK when this is on.
 
+config MINIMALPAD_HOST_LIGHTS
+    bool "Layer and key lights, kept on the pad and set from Studio"
+    depends on ZMK_RGB_UNDERGLOW
+    default y
+    help
+      SET_LAYER_LIGHT, GET_LAYER_LIGHT, SET_KEY_LIGHT and GET_KEY_LIGHTS:
+      Studio gives a layer above Default a light, and a key on any layer,
+      Default included, a light of its own: a colour, Off, or Inherit, which
+      leaves the key to its layer and the layer to the one below. The pad
+      keeps them in its settings, saved once changes have stopped for 2
+      seconds, so they last without Studio. The build advertises
+      MP_CAP_FEATURES in HELLO_ACK, and layer and key lights in FEATURES,
+      when this is on.
+
 config MINIMALPAD_HOST_LEDS_FORCE_SOLID
     bool "Show a host colour with the solid effect"
     depends on ZMK_RGB_UNDERGLOW
