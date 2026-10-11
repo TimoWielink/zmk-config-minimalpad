@@ -13,6 +13,11 @@
  * from the top, the first key light or layer light that is not Inherit, then
  * Default's key light. Inherit there leaves the key to the underglow.
  *
+ * While the pad's own lighting is being shown (SHOW_PAD_LIGHTING, or
+ * lighting.c after a key or the dial changed it), the renderer draws the
+ * underglow as it is and ignores the lights. mp_lights_show_pad() sets the
+ * deadline and mp_lights_showing_pad() says whether it has passed.
+ *
  * Threading: commands run on the system work queue, and so does the save. The
  * underglow draws its frames on its own work queue, which asks
  * mp_lights_resolve(), and the settings load on the thread that loads them.
@@ -72,6 +77,14 @@ static struct mp_light key_lights[ZMK_KEYMAP_LAYERS_LEN][KEY_COUNT];
 /* Layers whose layer light or key lights changed since the last save, by bit of layer id. */
 static uint32_t dirty_layer_lights;
 static uint32_t dirty_key_lights;
+
+/*
+ * Until when the pad's own lighting shows in place of layer and key lights, in
+ * uptime milliseconds. Not saved: a restart shows layer and key lights again.
+ * 64 bits, so the 32-bit core cannot read half of one being written, which is
+ * why it is under lights_lock like the tables.
+ */
+static int64_t show_until;
 
 static const struct mp_light inherit = {.kind = MP_LIGHT_INHERIT};
 
@@ -143,6 +156,31 @@ struct mp_light mp_lights_resolve(uint8_t position) {
     k_spin_unlock(&lights_lock, key);
 
     return light;
+}
+
+/*
+ * Showing the pad's own lighting
+ */
+
+void mp_lights_show_pad(uint32_t ms) {
+    // Read before the lock, to keep what is held short. 0 puts the deadline in the past, which
+    // ends a show at once.
+    const int64_t until = ms == 0 ? 0 : k_uptime_get() + ms;
+
+    k_spinlock_key_t key = k_spin_lock(&lights_lock);
+    show_until = until;
+    k_spin_unlock(&lights_lock, key);
+}
+
+bool mp_lights_showing_pad(void) {
+    // Asked by the underglow's work queue for every frame, 20 times a second.
+    const int64_t now = k_uptime_get();
+
+    k_spinlock_key_t key = k_spin_lock(&lights_lock);
+    const bool showing = now < show_until;
+    k_spin_unlock(&lights_lock, key);
+
+    return showing;
 }
 
 /*
@@ -333,6 +371,18 @@ void mp_host_handle_get_layer_light(const struct mp_host_transport *from,
     }
 
     send_layer_light_state(from, cmd.layer_id);
+}
+
+void mp_host_handle_show_pad_lighting(const struct mp_host_transport *from,
+                                      const uint8_t *payload) {
+    ARG_UNUSED(from);
+
+    struct mp_show_pad_lighting cmd;
+    memcpy(&cmd, payload, sizeof(cmd));
+
+    // Counted from now, so sending it again renews the show, and 0 ends it. No answer: the
+    // lights are the answer.
+    mp_lights_show_pad((uint32_t)cmd.seconds * MSEC_PER_SEC);
 }
 
 void mp_host_handle_set_key_light(const struct mp_host_transport *from, const uint8_t *payload) {

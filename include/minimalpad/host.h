@@ -107,6 +107,8 @@ void mp_host_handle_set_lighting(const struct mp_host_transport *from, const uin
 void mp_host_handle_get_features(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_set_layer_light(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_get_layer_light(const struct mp_host_transport *from, const uint8_t *payload);
+void mp_host_handle_show_pad_lighting(const struct mp_host_transport *from,
+                                      const uint8_t *payload);
 void mp_host_handle_set_key_light(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_get_key_lights(const struct mp_host_transport *from, const uint8_t *payload);
 
@@ -187,14 +189,24 @@ static inline void mp_host_lighting_speed_stepped(int steps) { (void)steps; }
 struct mp_light mp_lights_resolve(uint8_t position);
 
 /*
- * Whether Studio is showing the pad's own lighting in place of layer and key
- * lights, so the renderer (src/leds/light_layers.c) passes every pixel of the
- * underglow through. Never, until SHOW_PAD_LIGHTING is handled. Safe from any
- * thread.
+ * Shows the pad's own lighting in place of layer and key lights for `ms` from
+ * now, so a change to it can be seen. Another call renews the show, to `ms` from
+ * then, and 0 ends it at once. SHOW_PAD_LIGHTING asks for it while Studio's
+ * Lights popover is open, and lighting.c asks for it when a key or the dial
+ * changes the pad's colour, effect or speed. Safe from any thread.
  */
-static inline bool mp_lights_showing_pad(void) { return false; }
+void mp_lights_show_pad(uint32_t ms);
+
+/*
+ * Whether the pad's own lighting is being shown, so the renderer
+ * (src/leds/light_layers.c) passes every pixel of the underglow through. Safe
+ * from any thread.
+ */
+bool mp_lights_showing_pad(void);
 
 #else
+
+static inline void mp_lights_show_pad(uint32_t ms) { (void)ms; }
 
 static inline struct mp_light mp_lights_resolve(uint8_t position) {
     (void)position;

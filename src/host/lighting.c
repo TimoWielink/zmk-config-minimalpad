@@ -59,6 +59,13 @@ LOG_MODULE_DECLARE(minimalpad_host, CONFIG_MINIMALPAD_HOST_LOG_LEVEL);
  */
 #define LOOK_DELAY_MS 75
 
+/*
+ * How long the pad shows its own lighting, in place of layer and key lights,
+ * after a key or the dial changed its colour, effect or speed, so the change
+ * can be seen (host-protocol.md, "The light rule").
+ */
+#define SHOW_AFTER_CHANGE_MS 3000
+
 /* The &rgb_ug behavior, by the name a keymap binding gives it. */
 #define UNDERGLOW_BEHAVIOR DEVICE_DT_NAME(DT_NODELABEL(rgb_ug))
 
@@ -222,8 +229,15 @@ static void send_to_every_host(struct mp_lighting_state state, bool answer) {
  * Compares the lighting with the last look, to save what ZMK leaves unsaved,
  * and with the last report, to tell every host of a change. Returns whether
  * it sent one.
+ *
+ * `from_input` is whether the look follows a key or the dial. Only then does a
+ * change of the pad's own colour (hue or saturation), effect or speed show the
+ * pad's lighting for a while. Brightness shows through the layer and key lights
+ * as it is, and off is dark anyway, so neither does. A look for the lights
+ * resting or a host colour never does, and nor does SET_LIGHTING, which takes
+ * the lighting as seen before it reports.
  */
-static bool look(void) {
+static bool look(bool from_input) {
     // Before start-up is done there is nothing to compare with yet (`started`). lighting_boot()
     // takes the lighting as it then is, key and dial changes included.
     if (!started) {
@@ -245,6 +259,12 @@ static bool look(void) {
             // ZMK scheduled its own save for these.
             mp_leds_wait_for_save();
         }
+
+        if (from_input &&
+            (now.hue != seen.hue || now.saturation != seen.saturation ||
+             now.effect != seen.effect || now.speed != seen.speed)) {
+            mp_lights_show_pad(SHOW_AFTER_CHANGE_MS);
+        }
     }
     remember_seen(&now);
 
@@ -263,7 +283,7 @@ static void look_after_input(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(look_after_input_work, look_after_input);
 
 static void look_after_input(struct k_work *work) {
-    const bool changed = look();
+    const bool changed = look(true);
 
     // Looking again while things keep changing, or while the last key or turn may still be
     // landing, catches the dial's steps as they run through the behavior queue.
@@ -272,7 +292,7 @@ static void look_after_input(struct k_work *work) {
     }
 }
 
-static void look_now(struct k_work *work) { look(); }
+static void look_now(struct k_work *work) { look(false); }
 
 static K_WORK_DEFINE(look_now_work, look_now);
 
