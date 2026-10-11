@@ -10,6 +10,7 @@ What changed in each version of the MinimalPad firmware. How versions are number
 - The colours follow the pad's brightness, the idle fade and lights off. The brightness keys and the dial dim and brighten them; they fade out when the pad is idle and a key wakes them. If you've switched the lights off, they stay dark: a layer or key light never switches them on.
 - While you change the pad's own colour, effect or speed with its keys or the dial, the pad shows its own lighting for about 3 seconds, so you can see the change even where a layer or key light would cover it. Studio, from its next release, does the same while **Lights** is open.
 - The pad saves a light about 2 seconds after your last change.
+- A computer that forgot the pad in its Bluetooth settings can pair with it again. Before, the pad kept that computer's old pairing and refused the new one, and clearing the pad's Bluetooth slots didn't always help.
 - Nothing else changes: your keys, layers, profiles, dial and lights are as you left them, and you don't need to pair the pad again. An older Studio works as it always did.
 
 ## 0.7.1
