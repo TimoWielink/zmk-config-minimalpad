@@ -10,8 +10,9 @@
  * through restarts and work without Studio.
  *
  * mp_lights_resolve() says which light a key shows: walking the active layers
- * from the top, the first key light or layer light that is not Inherit, then
- * Default's key light. Inherit there leaves the key to the underglow.
+ * from the top down to Default, the first key light or layer light that is not
+ * Inherit, then Default's key light. Inherit there leaves the key to the
+ * underglow.
  *
  * While the pad's own lighting is being shown (SHOW_PAD_LIGHTING, or
  * lighting.c after a key or the dial changed it), the renderer draws the
@@ -130,7 +131,12 @@ static struct mp_light resolve(uint8_t position) {
     // its layer light. An unused slot is ZMK_KEYMAP_LAYER_ID_INVAL, past the tables' end.
     for (int index = ZMK_KEYMAP_LAYERS_LEN - 1; index >= 0; index--) {
         const zmk_keymap_layer_id_t id = zmk_keymap_layer_index_to_id(index);
-        if (id >= ZMK_KEYMAP_LAYERS_LEN || id == base || !zmk_keymap_layer_active(id)) {
+        // ZMK's key walk stops at Default too. A layer below it, where ZMK Studio's layer order
+        // can move one, never decides a key, so it never lights one either.
+        if (id == base) {
+            break;
+        }
+        if (id >= ZMK_KEYMAP_LAYERS_LEN || !zmk_keymap_layer_active(id)) {
             continue;
         }
         if (key_lights[id][position].kind != MP_LIGHT_INHERIT) {

@@ -418,7 +418,7 @@ For each LED, from the highest level down. The first level that has something to
 | 4 | Layer light of the highest active layer that sets one | A colour or Off. Inherit passes down a layer |
 | 5 | The pad's own lighting | Colour or effect, brightness and speed, always running underneath |
 
-- **Walking down.** Levels 3 and 4 are walked together, highest active layer first: on each layer the key's light, then the layer's. A layer's key light beats its own layer light, and both beat anything below that layer. Inherit means "keep walking". An unused layer slot is skipped.
+- **Walking down.** Levels 3 and 4 are walked together, highest active layer first: on each layer the key's light, then the layer's. A layer's key light beats its own layer light, and both beat anything below that layer. Inherit means "keep walking". An unused layer slot is skipped. The walk ends at Default, as ZMK's walk for a key's binding does, so a layer ordered below Default, where the browser Configurator can move one, never decides a light.
 - **Default.** It has no layer light, so the pad's own lighting is Default's. Its key lights come last in the walk, above the pad's own lighting: they show on any key that no active layer's key light or layer light decides, with or without Studio.
 - **Host colour.** A Profile colour (`SET_PROFILE` with its LED flag, `SET_LEDS`) replaces the pad's own colour and effect at level 5. Layer and key lights are drawn over it.
 
