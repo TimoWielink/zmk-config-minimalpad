@@ -304,26 +304,29 @@ void mp_host_switch_profile(zmk_keymap_layer_id_t id);
  * in config/west.yml (9ebbeff): the transports' commands, the matrix scan and
  * the sensors, and so the behaviors ZMK raises from them.
  *
- * Next, Go to and Hold for return 0, or -ENOENT when no group is held or the
- * target is not in it; then nothing changes. A swap to the layer the pad is
- * already on does nothing, except that a Next or Go to which ends a hold still
- * sends STATE with change MP_LAYER_CHANGE_KEY, and so does a release which ends
- * one on the layer already shown, with MP_LAYER_CHANGE_HOLD_ENDED.
+ * Next, Go to and Hold for return 0, or -ENOENT when no group is held, the
+ * target is not in it, or the target is no longer a layer in the keymap (ZMK
+ * Studio can remove one after SWITCH_PROFILE checked the group); then nothing
+ * changes, and a hold stays current. A swap to the layer the pad is already on
+ * does nothing, except that a Go to which ends a hold still sends STATE with
+ * change MP_LAYER_CHANGE_KEY, and so does a release which ends one on the layer
+ * already shown, with MP_LAYER_CHANGE_HOLD_ENDED.
  */
 
 /* Swaps to the layer after the current one in the group, wrapping round, or to
  * the group's first when the pad is on none of them, as during Hold for
- * Default. */
+ * Default. A layer the keymap no longer holds is skipped, and with no other
+ * layer to go to Next returns -ENOENT. */
 int mp_profile_layer_next(void);
 
-/* Swaps to `target`, a layer in the group. */
+/* Swaps to `target`, a layer in the group and in the keymap. */
 int mp_profile_layer_go(zmk_keymap_layer_id_t target);
 
 /*
- * Swaps to `target`, a layer in the group or Default, until the hold is
- * released. `token` names this hold for mp_profile_layer_release(); it is never
- * 0, and is set to 0 when the call fails. The newest hold is the current one
- * and keeps the layer the first one left.
+ * Swaps to `target`, a layer in the group and in the keymap, or Default, until
+ * the hold is released. `token` names this hold for mp_profile_layer_release();
+ * it is never 0, and is set to 0 when the call fails. The newest hold is the
+ * current one and keeps the layer the first one left.
  */
 int mp_profile_layer_hold(zmk_keymap_layer_id_t target, uint32_t *token);
 

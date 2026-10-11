@@ -14,6 +14,10 @@
  * switch is not a swap: SWITCH_PROFILE goes through zmk_keymap_layer_to(), as
  * SET_PROFILE does (host.c).
  *
+ * SWITCH_PROFILE checks that each layer of the group is in the keymap, once.
+ * ZMK Studio can remove a layer afterwards, so Next skips such a layer and Go to
+ * and Hold for refuse it, each asking the keymap again.
+ *
  * Nothing here is saved. The group belongs to the host holding the pad, and a
  * pad that restarts is held by no host.
  *
@@ -114,22 +118,54 @@ static void key_swap_to(zmk_keymap_layer_id_t target, bool ended_hold) {
 }
 
 int mp_profile_layer_next(void) {
-    k_spinlock_key_t key = k_spin_lock(&profile_layers_lock);
+    // The group is copied out under the lock so the keymap can be asked about its ids with the
+    // lock released. SWITCH_PROFILE checked them once, and ZMK Studio can remove a layer since.
+    zmk_keymap_layer_id_t ids[MP_SWITCH_PROFILE_GROUP_MAX];
 
-    if (group_len == 0) {
-        k_spin_unlock(&profile_layers_lock, key);
+    k_spinlock_key_t key = k_spin_lock(&profile_layers_lock);
+    const uint8_t len = group_len;
+    memcpy(ids, group, len);
+    k_spin_unlock(&profile_layers_lock, key);
+
+    if (len == 0) {
         return -ENOENT;
     }
 
-    // The group's first when the pad is on none of its layers, as during Hold for Default.
+    // The layers after the current one, wrapping round and stopping short of it. All of them,
+    // from the group's first, when the pad is on none of its layers, as during Hold for Default.
     const zmk_keymap_layer_id_t current = mp_host_layer();
-    zmk_keymap_layer_id_t target = group[0];
+    uint8_t first = 0;
+    uint8_t candidates = len;
 
-    for (uint8_t i = 0; i < group_len; i++) {
-        if (group[i] == current) {
-            target = group[(i + 1) % group_len];
+    for (uint8_t i = 0; i < len; i++) {
+        if (ids[i] == current) {
+            first = i + 1;
+            candidates = len - 1;
             break;
         }
+    }
+
+    // The first of them the keymap still holds. With none, the key does nothing, a hold stays
+    // current, and the pad stays where it is: an app with one layer left has nowhere to go.
+    zmk_keymap_layer_id_t target = 0;
+    bool found = false;
+
+    for (uint8_t i = 0; i < candidates && !found; i++) {
+        target = ids[(first + i) % len];
+        found = mp_host_layer_in_keymap(target);
+    }
+
+    if (!found) {
+        return -ENOENT;
+    }
+
+    key = k_spin_lock(&profile_layers_lock);
+
+    // A group set since the copy was taken is the host's newer word, and the target may not be
+    // in it. Not reachable with every caller on the system work queue, as the swap relies on.
+    if (!in_group(target)) {
+        k_spin_unlock(&profile_layers_lock, key);
+        return -ENOENT;
     }
 
     // A key that moves the profile layer ends a hold, so its release does nothing.
@@ -142,6 +178,12 @@ int mp_profile_layer_next(void) {
 }
 
 int mp_profile_layer_go(zmk_keymap_layer_id_t target) {
+    // A layer removed from the keymap since SWITCH_PROFILE is no target, though it is still in the
+    // group. Asked with the lock released.
+    if (!mp_host_layer_in_keymap(target)) {
+        return -ENOENT;
+    }
+
     k_spinlock_key_t key = k_spin_lock(&profile_layers_lock);
 
     // Only the held profile's own layers: Default, or another profile's layer, is no target.
@@ -159,6 +201,12 @@ int mp_profile_layer_go(zmk_keymap_layer_id_t target) {
 }
 
 int mp_profile_layer_hold(zmk_keymap_layer_id_t target, uint32_t *token) {
+    // As for Go to, a layer removed since SWITCH_PROFILE is no target. Default is always there.
+    if (target != zmk_keymap_layer_default() && !mp_host_layer_in_keymap(target)) {
+        *token = 0;
+        return -ENOENT;
+    }
+
     k_spinlock_key_t key = k_spin_lock(&profile_layers_lock);
 
     // Default is a target only with a group held, like the rest: with no profile there is no

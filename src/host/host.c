@@ -831,7 +831,10 @@ void mp_host_handle_get_state(const struct mp_host_transport *from, const uint8_
 uint8_t mp_host_features(void) {
     uint8_t features = 0;
 
-    if (IS_ENABLED(CONFIG_MINIMALPAD_PROFILE_LAYERS)) {
+    // The bit promises the &profile_layer key as well as SWITCH_PROFILE, so a build without the
+    // key does not announce it: a host would put a key on the pad that does nothing.
+    if (IS_ENABLED(CONFIG_MINIMALPAD_PROFILE_LAYERS) &&
+        IS_ENABLED(CONFIG_MINIMALPAD_PROFILE_LAYER_BEHAVIOR)) {
         features |= BIT(MP_FEATURE_PROFILE_LAYERS);
     }
 

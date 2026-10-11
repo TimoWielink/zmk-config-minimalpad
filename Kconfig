@@ -58,14 +58,17 @@ config MINIMALPAD_PROFILE_LAYERS
     bool "Several layers for one profile, switched on the pad"
     default y
     help
-      Profile layers, feature bit 0 of FEATURES. With each app switch Studio
-      sends SWITCH_PROFILE: the layer to show and the profile's layers, its
-      group, which the pad keeps in RAM, never saved, while Studio holds it.
-      The &profile_layer key then moves within the group on the pad itself,
-      Next layer, Go to and Hold for, with no round trip to the Mac, and
-      STATE's change byte tells Studio when a key moved the layer. Without
-      this, SWITCH_PROFILE is skipped as an unknown command and Studio
-      switches with SET_PROFILE.
+      Profile layers. With each app switch Studio sends SWITCH_PROFILE: the
+      layer to show and the profile's layers, its group, which the pad keeps
+      in RAM, never saved, while Studio holds it. The &profile_layer key then
+      moves within the group on the pad itself, Next layer, Go to and Hold
+      for, with no round trip to the Mac, and STATE's change byte tells
+      Studio when a key moved the layer. Without this, SWITCH_PROFILE is
+      skipped as an unknown command and Studio switches with SET_PROFILE.
+
+      FEATURES announces profile layers as feature bit 0 only with
+      MINIMALPAD_PROFILE_LAYER_BEHAVIOR too, since the bit promises the
+      &profile_layer key as well as SWITCH_PROFILE.
 
 config MINIMALPAD_PROFILE_LAYER_BEHAVIOR
     bool "The &profile_layer key: Next layer, Go to and Hold for"
@@ -74,14 +77,18 @@ config MINIMALPAD_PROFILE_LAYER_BEHAVIOR
     help
       A key bound to &profile_layer moves between the layers of the profile
       Studio holds the pad on: PL_NEXT 0 swaps to the next layer, wrapping
-      round, PL_GO layer swaps to that layer, and PL_HOLD layer swaps to it
-      while the key is held. The layer is one of the profile's layers, which
-      SWITCH_PROFILE sets, and for PL_HOLD it may be Default too. On release
-      the pad returns to the layer it was on when the hold began. With no
-      profile held the key does nothing. Studio puts it on a key with ZMK
-      Studio's set_layer_binding, which needs the behavior metadata
-      (ZMK_BEHAVIOR_METADATA); dt-bindings/minimalpad/profile_layer.h names
-      the modes for a keymap.
+      round and skipping a layer the keymap no longer holds, PL_GO layer
+      swaps to that layer, and PL_HOLD layer swaps to it while the key is
+      held. The layer is one of the profile's layers, which SWITCH_PROFILE
+      sets, and for PL_HOLD it may be Default too. A layer the keymap no
+      longer holds is no target. On release the pad returns to the layer it
+      was on when the hold began. With no profile held the key does nothing.
+      Studio puts it on a key with ZMK Studio's set_layer_binding, which
+      needs the behavior metadata (ZMK_BEHAVIOR_METADATA);
+      dt-bindings/minimalpad/profile_layer.h names the modes for a keymap.
+
+      Without this, FEATURES lacks feature bit 0 (profile layers), so Studio
+      does not send SWITCH_PROFILE.
 
 config MINIMALPAD_MAC_ACTION
     bool "The &mac_action key, which sends ACTION_EVENT to Studio"

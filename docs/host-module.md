@@ -326,12 +326,12 @@ Firmware 0.8.0 lets a host give every layer above Default a light, and every key
 
 | Feature | Name | Commands and events | Built with |
 | --- | --- | --- | --- |
-| 0 | Profile layers | `SWITCH_PROFILE`, the `&profile_layer` key and `STATE`'s `change` byte ([Profile layers](#profile-layers)) | `CONFIG_MINIMALPAD_PROFILE_LAYERS` |
+| 0 | Profile layers | `SWITCH_PROFILE`, the `&profile_layer` key and `STATE`'s `change` byte ([Profile layers](#profile-layers)) | `CONFIG_MINIMALPAD_PROFILE_LAYERS` and `CONFIG_MINIMALPAD_PROFILE_LAYER_BEHAVIOR` |
 | 1 | Layer lights | `SET_LAYER_LIGHT`, `GET_LAYER_LIGHT`, `LAYER_LIGHT_STATE`, `SHOW_PAD_LIGHTING` | `CONFIG_MINIMALPAD_HOST_LIGHTS` |
 | 2 | Key lights | `SET_KEY_LIGHT`, `GET_KEY_LIGHTS`, `KEY_LIGHTS_STATE` | `CONFIG_MINIMALPAD_HOST_LIGHTS` |
 | 3-127 | | Reserved | |
 
-The host core answers `GET_FEATURES` and sets `MP_CAP_FEATURES` in `HELLO_ACK`, on every build. They do not depend on the lights, so a build with `CONFIG_MINIMALPAD_HOST_LIGHTS=n` still announces features and answers with only the bits it has: `0x01`, with profile layers on. A build with neither answers with one byte, `0x00`, so a host can tell "no features" from a pad that does not know the question.
+The host core answers `GET_FEATURES` and sets `MP_CAP_FEATURES` in `HELLO_ACK`, on every build. They do not depend on the lights, so a build with `CONFIG_MINIMALPAD_HOST_LIGHTS=n` still announces features and answers with only the bits it has: `0x01`, with profile layers on. A build with neither answers with one byte, `0x00`, so a host can tell "no features" from a pad that does not know the question. Bit 0 promises the `&profile_layer` key as well as `SWITCH_PROFILE`, so a build with `CONFIG_MINIMALPAD_PROFILE_LAYER_BEHAVIOR=n` leaves it clear, though it still handles `SWITCH_PROFILE`.
 
 ### The light payload
 
@@ -543,7 +543,7 @@ In a keymap that is `&profile_layer PL_NEXT 0` or `&profile_layer PL_GO 5`. No k
 
 | Mode | Value | Press | Release |
 | --- | --- | --- | --- |
-| Next | 0 | Swap to the next layer in the group, wrapping round. The group's first when the pad is on none of its layers, as it is during Hold for Default | — |
+| Next | 0 | Swap to the next layer in the group, wrapping round, and skipping a layer the keymap no longer holds. The group's first when the pad is on none of its layers, as it is during Hold for Default | — |
 | Go to | 1 | Swap to the layer, if it is in the group | — |
 | Hold for | 2 | Remember the layer the pad is on, then swap to the target: a layer in the group, or Default, which means the profile layer goes off | If the hold is still current, swap back to the remembered layer |
 
@@ -551,7 +551,11 @@ The key does nothing, and the press goes no further, when:
 
 - no host holds a profile with a group;
 - Go to or Hold for names a layer that is not in the group. Default is a target for Hold for only, and only with a group held, and a layer of another profile is never a target;
+- Go to or Hold for names a layer the keymap no longer holds. `SWITCH_PROFILE` checks the group's layers once, and ZMK Studio can remove one afterwards. Next skips such a layer;
+- it is a Next with no other layer in the group, in the keymap, to go to, as in an app with one layer;
 - it is a Hold for on a key position past the keys, such as a combo's: it has nowhere to keep the hold. Next and Go to work there.
+
+A key that does nothing leaves a hold that is current as it is.
 
 ### The swap
 
@@ -569,7 +573,7 @@ A swap switches the profile layer and leaves everything else as it was: it turns
 - **A hold stops being current** when anything else moves the profile layer: Next, Go to, another hold, `SWITCH_PROFILE`, `SET_PROFILE`, a fallback or a release. The release of a hold that is no longer current does nothing, and the move that ended it stands.
 - **Two holds.** The newest hold wins and keeps the layer the first one left. Letting go of the older key does nothing, and letting go of the newest, or of every hold key in any order, ends where the first went down.
 - **A Hold for the layer already shown** begins silently: nothing moves and no `STATE` goes out. Its release reports `change` 3 (hold ended).
-- **A Next or Go to that ends a hold on the layer already shown** reports `change` 1, though nothing moves, so a host learns the layer is now the key's choice and not the hold's. With no hold current, a Next or Go to to the layer already shown does nothing.
+- **A Go to that ends a hold on the layer already shown** reports `change` 1, though nothing moves, so a host learns the layer is now the key's choice and not the hold's. With no hold current, a Go to the layer already shown does nothing. A Next never lands on the layer already shown: with no other layer to go to it does nothing, and a hold stays current.
 - **During Hold for Default** `STATE`'s `layer_id` is Default's id. A Next then ends the hold and goes to the group's first layer.
 - As for every `STATE`, one that would repeat the last sent in every field, `change` included, is not sent. So when the last `STATE` already says the same layer and the same `change`, as it does for a Hold for the layer already shown, released right after another hold ended there (`change` 3), nothing goes out: a host already has what it would say.
 
@@ -588,7 +592,7 @@ A swap switches the profile layer and leaves everything else as it was: it turns
 
 ### Compatibility
 
-- **A host turns profile layers on from feature 0, and from nothing else.** Firmware without it skips `0x0C` silently, as firmware before 0.9.0 does and a build with `CONFIG_MINIMALPAD_PROFILE_LAYERS=n` does, so a host that sent one and waited would only time out.
+- **A host turns profile layers on from feature 0, and from nothing else.** Firmware without it skips `0x0C` silently, as firmware before 0.9.0 does and a build with `CONFIG_MINIMALPAD_PROFILE_LAYERS=n` does, so a host that sent one and waited would only time out. A build with `CONFIG_MINIMALPAD_PROFILE_LAYER_BEHAVIOR=n` has no `&profile_layer` key, so it leaves the bit clear too.
 - **Studio 0.5.0 and older on this firmware** are unaffected. `HELLO_ACK` is still 7 bytes, with `proto` 7 and the same capability bits. They read the bytes of `STATE` they know and ignore the seventh. Studio 0.5.0, the first to ask `GET_FEATURES`, uses features 1 and 2 and does nothing with bit 0. They switch with `SET_PROFILE` as they always did, which clears the group, so a `&profile_layer` key set by a newer Studio does nothing under them.
 - **Studio 0.6.0 on firmware 0.8.0.** `FEATURES` is `0x06`, so feature 0 is clear. Studio sends no `SWITCH_PROFILE`, offers no `&profile_layer` key and switches with `SET_PROFILE`, to the profile's last layer, as before. A profile that already has several layers shows the others need firmware 0.9.0 to switch on the pad, and adding a layer offers the update.
 - **`STATE` grows by a trailing field.** A host reads the bytes it knows and ignores the rest, from its first version: a decoder that refused a longer `STATE` would fix it at its size for good.
@@ -621,8 +625,8 @@ Add any of these to `boards/shields/minimalpad/minimalpad.conf`:
 | `CONFIG_MINIMALPAD_HOST_DIAL_SCROLL_STEP` | `1` | Wheel steps per step of the dial when a profile's dial scrolls |
 | `CONFIG_MINIMALPAD_HOST_LIGHTING` | `y` | Studio reads and sets the pad's own lighting. Needs `CONFIG_ZMK_RGB_UNDERGLOW`. Set `n` to build without it; the pad then no longer claims lighting in `HELLO_ACK`, and colours changed with keys go back to waiting for ZMK's next save |
 | `CONFIG_MINIMALPAD_HOST_LIGHTS` | `y` | Layer and key lights, kept on the pad and set from Studio. Needs `CONFIG_ZMK_RGB_UNDERGLOW`. Set `n` to build without it; `FEATURES` then lacks bits 1 and 2, and every key shows the underglow. `GET_FEATURES` stays, because the host core answers it |
-| `CONFIG_MINIMALPAD_PROFILE_LAYERS` | `y` | Several layers for one profile: `SWITCH_PROFILE`, the group the pad keeps while Studio holds it, and `STATE`'s `change` byte. Set `n` to build without it; `FEATURES` then lacks bit 0 and the pad skips `SWITCH_PROFILE` as an unknown command |
-| `CONFIG_MINIMALPAD_PROFILE_LAYER_BEHAVIOR` | `y` | The `&profile_layer` key. Needs `CONFIG_MINIMALPAD_PROFILE_LAYERS`. Set `n` to build without it |
+| `CONFIG_MINIMALPAD_PROFILE_LAYERS` | `y` | Several layers for one profile: `SWITCH_PROFILE`, the group the pad keeps while Studio holds it, and `STATE`'s `change` byte. Set `n` to build without it; `FEATURES` then lacks bit 0 and the pad skips `SWITCH_PROFILE` as an unknown command. The bit also needs `CONFIG_MINIMALPAD_PROFILE_LAYER_BEHAVIOR` |
+| `CONFIG_MINIMALPAD_PROFILE_LAYER_BEHAVIOR` | `y` | The `&profile_layer` key. Needs `CONFIG_MINIMALPAD_PROFILE_LAYERS`. Set `n` to build without it; `FEATURES` then lacks bit 0, because the bit promises this key |
 | `CONFIG_MINIMALPAD_LIGHT_LAYERS` | `y` | The LED strip that draws those lights over the underglow. Built with or without the host module, because the shield's devicetree makes it the underglow's. Set `n` only after pointing the overlay's `zmk,underglow` back at the chain |
 | `CONFIG_MINIMALPAD_HOST_LEDS_FORCE_SOLID` | `y` | Show Profile HSB exactly: Breathe generates brightness, while Spectrum and Swirl generate hue |
 | `CONFIG_MINIMALPAD_HOST_LOG_LEVEL_DBG` | off | Log what the module decides, with the `zmk-usb-logging` snippet |
@@ -644,7 +648,7 @@ Firmware 0.7.0's lighting, measured on 29 Sep 2026 at the ZMK revision `config/w
 
 Firmware 0.8.0's layer and key lights, measured on 11 Oct 2026 the same way, take `minimalpad_with_studio` to 255,008 B flash and 82,054 B RAM, against 252,220 B and about 79.7 KB for 0.7.1: about 2.8 KB more flash and 2.3 KB more RAM. 1,176 B of that RAM is `CONFIG_BT_ATT_TX_COUNT=10`.
 
-Firmware 0.9.0's profile layers and the dial's save, measured on 11 Oct 2026 the same way (the Docker build of `minimalpad_with_studio`, with ZMK at the revision `config/west.yml` pins), take `minimalpad_with_studio` to 256,968 B flash and 82,214 B RAM. The v0.8.0 tag built the same way gives 255,056 B and 82,054 B, 48 B more flash than the figure above, which was taken before the last pairing fix. So 0.9.0 is 1,912 B more flash and 160 B more RAM. A build with `CONFIG_MINIMALPAD_HOST_LIGHTS=n` also links: 254,372 B flash and 81,062 B RAM.
+Firmware 0.9.0's profile layers and the dial's save, measured on 12 Oct 2026 the same way (the Docker build of `minimalpad_with_studio`, with ZMK at the revision `config/west.yml` pins), take `minimalpad_with_studio` to 257,096 B flash and 82,214 B RAM. The v0.8.0 tag built the same way gives 255,056 B and 82,054 B, 48 B more flash than the figure above, which was taken before the last pairing fix. So 0.9.0 is 2,040 B more flash and 160 B more RAM. A build with `CONFIG_MINIMALPAD_HOST_LIGHTS=n` also links: 254,500 B flash and 81,062 B RAM. So does one with `CONFIG_MINIMALPAD_PROFILE_LAYER_BEHAVIOR=n`: 256,012 B flash and 82,134 B RAM.
 
 ## Testing
 

@@ -178,8 +178,18 @@ static void dispatch(struct mp_host_reader *reader, const struct mp_host_transpo
         // error, because that is how the protocol grows; the handler reads the fields it knows
         // and leaves the rest.
         reader->rejected++;
-        LOG_WRN("Rejecting command 0x%02x with %d payload bytes, expected at least %d",
-                header.command, header.length, (int)needed);
+
+        if (needed > MP_HOST_PAYLOAD_MAX) {
+            // A count that asks for more than any frame holds, as SWITCH_PROFILE's does above 15.
+            // The frame is not short: its count is wrong.
+            LOG_WRN("Rejecting command 0x%02x: its count is out of range, it needs %d payload "
+                    "bytes and a frame holds %d",
+                    header.command, (int)needed, MP_HOST_PAYLOAD_MAX);
+        } else {
+            LOG_WRN("Rejecting command 0x%02x with %d payload bytes, expected at least %d",
+                    header.command, header.length, (int)needed);
+        }
+
         mp_host_reject(from, header.command, MP_REJECTED_WRONG_LENGTH);
         return;
     }
