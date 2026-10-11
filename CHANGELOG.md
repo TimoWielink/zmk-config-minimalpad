@@ -2,6 +2,15 @@
 
 What changed in each version of the MinimalPad firmware. How versions are numbered and released is in [docs/releasing.md](docs/releasing.md). A version's section here becomes the description of its GitHub Release, so write it for the people who will flash it.
 
+## 0.9.0
+
+- An app can have several layers, and the pad switches between them by itself. In MinimalPad Studio for Mac, from its next release, give an app a second layer, such as one for rating and one for editing in Lightroom, then put a key on each to move between them: **Next layer** steps through the app's layers and wraps round, **Go to** jumps to one of them, and **Hold for** shows one for as long as you hold the key. Studio tells the pad which layers belong to the app in front, and the keys do the rest on the pad, so a switch is instant and doesn't wait for the Mac or a slow Bluetooth link.
+- **Hold for Default** works on an app's layer now. Hold the key and the pad shows Default's keys; let go and it's back on the layer you were on. Before, holding Default did nothing, because Default was already there underneath.
+- Moving between an app's layers leaves any other layer you've switched on yourself, such as a numbers layer, as it was. These keys only act while Studio has the pad on an app. Without Studio, or on Default, they do nothing.
+- The pad tells Studio when a key changed its layer, so Studio can bring you back to the layer you last used when you return to the app.
+- The pad now saves a dial you set about 2 seconds after your last change, as it saves a light, and never while it is starting up. Before, it saved at once.
+- Nothing else changes: your keys, layers, profiles, dial and lights are as you left them, and you don't need to pair the pad again. An older Studio works as it always did.
+
 ## 0.8.0
 
 - Each layer, and each key, can have a light of its own. In MinimalPad Studio for Mac, from its next release, give a layer a colour and the pad turns that colour while you're on that layer, or give a key its own colour, or switch its light off. The pad keeps them, so they work without Studio running, on any computer.

@@ -7,7 +7,8 @@
  *
  *   &profile_layer PL_NEXT 0       the next layer in the group, wrapping round
  *   &profile_layer PL_GO layer     that layer, if it is in the group
- *   &profile_layer PL_HOLD layer   that layer, or Default, until the key is released
+ *   &profile_layer PL_HOLD layer   that layer, or Default, while the key is held, and
+ *                                  back to the layer the pad was on when the hold began
  *
  * Without a group, which is without a host holding a profile, the key does
  * nothing, and the press goes no further.
@@ -19,8 +20,6 @@
  */
 
 #define DT_DRV_COMPAT minimalpad_behavior_profile_layer
-
-#include <errno.h>
 
 #include <zephyr/device.h>
 #include <drivers/behavior.h>

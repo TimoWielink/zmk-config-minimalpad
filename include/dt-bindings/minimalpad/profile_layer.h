@@ -16,5 +16,6 @@
 /* Swap to a layer of the profile. */
 #define PL_GO 1
 
-/* Swap to a layer of the profile, or Default, until the key is released. */
+/* Swap to a layer of the profile, or to Default, while the key is held. On release the pad
+ * returns to the layer it was on when the hold began. */
 #define PL_HOLD 2
