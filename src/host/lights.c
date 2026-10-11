@@ -194,8 +194,9 @@ bool mp_lights_showing_pad(void) {
 #if IS_ENABLED(CONFIG_SETTINGS)
 
 /*
- * Whether the saved lights have loaded, under lights_lock. Until then nothing
- * is saved: see lights_settings_commit().
+ * Whether the saved lights have loaded, under lights_lock. Until then a change
+ * is only marked dirty, and nothing is saved or scheduled: see
+ * lights_settings_commit().
  */
 static bool lights_loaded;
 
@@ -252,10 +253,9 @@ static void lights_save(struct k_work *work) {
     }
     k_spin_unlock(&lights_lock, key);
 
+    // Only scheduled once the lights have loaded (schedule_save() and the commit). Were it ever
+    // to run sooner, it leaves the marks for the commit and makes no settings call.
     if (!loaded) {
-        // A change from before the load finished: try again once it has (see
-        // lights_settings_commit()). The change stays marked until then.
-        k_work_reschedule(&lights_save_work, K_MSEC(SAVE_DELAY_MS));
         return;
     }
 
@@ -266,8 +266,22 @@ static void lights_save(struct k_work *work) {
     }
 }
 
-/* A change was made: save it once changes have stopped for SAVE_DELAY_MS. */
-static void schedule_save(void) { k_work_reschedule(&lights_save_work, K_MSEC(SAVE_DELAY_MS)); }
+/*
+ * A change was marked dirty: save it once changes have stopped for
+ * SAVE_DELAY_MS. Until the saved lights have loaded the mark stays and nothing
+ * is scheduled: the commit schedules the save. A handler marks before it calls
+ * this, and the commit sets lights_loaded and reads the marks under one lock,
+ * so one of the two always schedules it.
+ */
+static void schedule_save(void) {
+    k_spinlock_key_t key = k_spin_lock(&lights_lock);
+    const bool loaded = lights_loaded;
+    k_spin_unlock(&lights_lock, key);
+
+    if (loaded) {
+        k_work_reschedule(&lights_save_work, K_MSEC(SAVE_DELAY_MS));
+    }
+}
 
 #else
 
@@ -540,14 +554,25 @@ static int key_lights_settings_set(const char *name, size_t len, settings_read_c
  * a save cannot be overwritten by the load. No settings call is made here, nor
  * may the save run before this: this runs on the thread loading the settings,
  * which holds their lock until every commit has run, ZMK's Bluetooth start-up
- * among them, and Bluetooth sends its commands from the system work queue. A
- * save there waiting for the lock would hang the pad at start, as lighting.c's
- * `started` says. The save also waits SAVE_DELAY_MS after a change.
+ * among them (its commit is a dynamic handler, so it runs after this static
+ * one), and Bluetooth sends its commands from the system work queue. A save
+ * there waiting for the lock would hang the pad at start, as lighting.c's
+ * `started` says.
+ *
+ * So a change from before the load was only marked, and the save for it is
+ * scheduled here, SAVE_DELAY_MS from now. Starting that timer is not a settings
+ * call. The first save then comes at least SAVE_DELAY_MS after this, long after
+ * the remaining commits have run and the lock has been let go.
  */
 static int lights_settings_commit(void) {
     k_spinlock_key_t key = k_spin_lock(&lights_lock);
     lights_loaded = true;
+    const bool dirty = (dirty_layer_lights | dirty_key_lights) != 0;
     k_spin_unlock(&lights_lock, key);
+
+    if (dirty) {
+        k_work_reschedule(&lights_save_work, K_MSEC(SAVE_DELAY_MS));
+    }
     return 0;
 }
 
