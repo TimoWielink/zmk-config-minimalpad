@@ -103,12 +103,14 @@ config MINIMALPAD_HOST_LIGHTS
     depends on ZMK_RGB_UNDERGLOW
     default y
     help
-      SET_LAYER_LIGHT, GET_LAYER_LIGHT, SET_KEY_LIGHT and GET_KEY_LIGHTS:
-      Studio gives a layer above Default a light, and a key on any layer,
-      Default included, a light of its own: a colour, Off, or Inherit, which
-      leaves the key to its layer and the layer to the one below. The pad
-      keeps them in its settings, saved once changes have stopped for 2
-      seconds, so they last without Studio. The build advertises
+      GET_FEATURES, SET_LAYER_LIGHT, GET_LAYER_LIGHT, SHOW_PAD_LIGHTING,
+      SET_KEY_LIGHT and GET_KEY_LIGHTS: Studio gives a layer above Default a
+      light, and a key on any layer, Default included, a light of its own: a
+      colour, Off, or Inherit, which leaves the key to its layer and the layer
+      to the one below. The pad keeps them in its settings, saved once
+      changes have stopped for 2 seconds, so they last without Studio. While
+      the pad's own lighting is being changed, from Studio or with a key or
+      the dial, the pad shows it in their place. The build advertises
       MP_CAP_FEATURES in HELLO_ACK, and layer and key lights in FEATURES,
       when this is on.
 

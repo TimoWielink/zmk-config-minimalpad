@@ -388,7 +388,8 @@ void mp_host_handle_get_layer_light(const struct mp_host_transport *from,
     struct mp_get_layer_light cmd;
     memcpy(&cmd, payload, sizeof(cmd));
 
-    // A reserved slot is answered too, as Inherit, as GET_DIAL answers one.
+    // A reserved slot is answered too, as GET_DIAL answers one, with what the pad has for that
+    // id: a layer the browser Configurator removed can leave its light behind.
     if (cmd.layer_id >= ZMK_KEYMAP_LAYERS_LEN) {
         mp_host_reject(from, MP_CMD_GET_LAYER_LIGHT, MP_REJECTED_UNKNOWN_LAYER);
         return;
@@ -404,8 +405,8 @@ void mp_host_handle_show_pad_lighting(const struct mp_host_transport *from,
     struct mp_show_pad_lighting cmd;
     memcpy(&cmd, payload, sizeof(cmd));
 
-    // Counted from now, so sending it again renews the show, and 0 ends it. No answer: the
-    // lights are the answer.
+    // Counted from now, so sending it again moves the end of the show later, never earlier, and
+    // 0 ends it at once. No answer: the lights are the answer.
     mp_lights_show_pad((uint32_t)cmd.seconds * MSEC_PER_SEC);
 }
 
@@ -465,7 +466,8 @@ void mp_host_handle_get_key_lights(const struct mp_host_transport *from,
     struct mp_get_key_lights cmd;
     memcpy(&cmd, payload, sizeof(cmd));
 
-    // A reserved slot is answered too, as all Inherit.
+    // A reserved slot is answered too, with what the pad has for that id, as for
+    // GET_LAYER_LIGHT.
     if (cmd.layer_id >= ZMK_KEYMAP_LAYERS_LEN) {
         mp_host_reject(from, MP_CMD_GET_KEY_LIGHTS, MP_REJECTED_UNKNOWN_LAYER);
         return;
