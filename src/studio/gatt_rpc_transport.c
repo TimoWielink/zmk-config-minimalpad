@@ -114,6 +114,15 @@ static ssize_t write_rpc_req(struct bt_conn *conn, const struct bt_gatt_attr *at
         }
 
         ring_buf_put_finish(rpc_buf, claim_len);
+
+        if (copied < len) {
+            // The buffer is full. ZMK's own transport spins here without telling Studio to
+            // read, so a write larger than the free room never fits and the pad freezes. Let
+            // Studio's thread read what is there, then try again; it answers without waiting
+            // on this thread (indications go out from their own work item).
+            zmk_rpc_rx_notify();
+            k_sleep(K_MSEC(1));
+        }
     }
 
     zmk_rpc_rx_notify();
