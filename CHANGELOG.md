@@ -9,6 +9,7 @@ What changed in each version of the MinimalPad firmware. How versions are number
 - Moving between an app's layers leaves any other layer you've switched on yourself, such as a numbers layer, as it was. These keys only act while Studio has the pad on an app. Without Studio, or in an app without a profile, they do nothing.
 - The pad tells Studio when a key changed its layer, so Studio can bring you back to the layer you last used when you return to the app.
 - The pad now saves a dial you set about 2 seconds after your last change, as it saves a light, and never while it is starting up. Before, it saved at once.
+- Naming a layer with more than about 17 characters over Bluetooth no longer freezes the pad until it is restarted. Over USB, such a name no longer fails silently, with the end of the request lost.
 - Nothing else changes: your keys, layers, profiles, dial and lights are as you left them, and you don't need to pair the pad again. An older Studio works as it always did.
 
 ## 0.8.0
