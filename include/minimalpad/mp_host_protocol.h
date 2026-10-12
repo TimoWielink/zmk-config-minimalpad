@@ -149,7 +149,8 @@ enum mp_host_event {
  * the end of the bitmap is one the pad does not have.
  *
  * - PROFILE_LAYERS: SWITCH_PROFILE, the &profile_layer behavior, and the change
- *   byte on the end of STATE. Set by firmware 0.9.0.
+ *   byte on the end of STATE. Set by firmware 0.9.0, and only by a build with
+ *   the &profile_layer behavior too: the bit promises the key.
  * - LAYER_LIGHTS: SET_LAYER_LIGHT, GET_LAYER_LIGHT, LAYER_LIGHT_STATE and
  *   SHOW_PAD_LIGHTING.
  * - KEY_LIGHTS: SET_KEY_LIGHT, GET_KEY_LIGHTS and KEY_LIGHTS_STATE. */
@@ -347,7 +348,9 @@ struct mp_set_profile {
  * layer in the keymap. Only count ids are sent, so the payload is 2 + count bytes:
  * 3 at the least, and sizeof(struct mp_switch_profile), 17, at the most. A later
  * revision may add fields after the ids. The pad answers with STATE, or with
- * REJECTED. Only the active host may send it, and only to a pad with
+ * REJECTED: a count above MP_SWITCH_PROFILE_GROUP_MAX needs more than a frame
+ * holds, so it is MP_REJECTED_WRONG_LENGTH, as a frame short of its count is.
+ * Only the active host may send it, and only to a pad with
  * MP_FEATURE_PROFILE_LAYERS. */
 struct mp_switch_profile {
 	uint8_t layer_id; /* ZMK stable layer id, not the index */
@@ -497,11 +500,13 @@ struct mp_state_event {
 	 * A host that predates it reads the five bytes it knows and ignores this
 	 * one, which is why the field goes on the end and not beside endpoint. */
 	uint8_t bt_profile; /* 0-4, the &bt BT_SEL slot, or MP_BT_PROFILE_NONE */
-	/* Added in revision 7, so it is sent only by firmware with
-	 * MP_FEATURE_PROFILE_LAYERS, and after bt_profile: a pad that sends it always
-	 * sends bt_profile before it, MP_BT_PROFILE_NONE if it has no slot. It explains
-	 * a change of layer_id. Older firmware sends six bytes or five, and a host
-	 * reads that as nothing known about why, not as MP_LAYER_CHANGE_HOST. */
+	/* Added in revision 7. Every build of firmware 0.9.0 and later sends it,
+	 * MP_LAYER_CHANGE_HOST throughout on one without MP_FEATURE_PROFILE_LAYERS,
+	 * and after bt_profile: a pad that sends it always sends bt_profile before it,
+	 * MP_BT_PROFILE_NONE if it has no slot. It explains a change of layer_id, and
+	 * stays until layer_id next moves, so a STATE sent for something else repeats
+	 * it. Older firmware sends six bytes or five, and a host reads that as nothing
+	 * known about why, not as MP_LAYER_CHANGE_HOST. */
 	uint8_t change; /* enum mp_layer_change */
 } __packed;
 
