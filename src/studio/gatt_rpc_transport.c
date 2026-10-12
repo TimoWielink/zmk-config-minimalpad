@@ -5,14 +5,14 @@
  */
 
 /*
- * ZMK Studio's Bluetooth transport, with one fix
+ * ZMK Studio's Bluetooth transport, with two fixes
  *
  * This is ZMK's app/src/studio/gatt_rpc_transport.c at the commit config/west.yml
  * pins, and it takes that file's place (CONFIG_ZMK_STUDIO_TRANSPORT_BLE=n in
  * minimalpad.conf). The service and its UUIDs are the same, so MinimalPad Studio
  * and the browser app reach it exactly as before.
  *
- * The fix is in notif_rpc_tx_cb(). ZMK's version takes a reference to the host's
+ * The first fix is in notif_rpc_tx_cb(). ZMK's version takes a reference to the host's
  * connection and, when an indication is still waiting for its confirmation,
  * returns without giving the reference back. Every Studio answer longer than one
  * packet goes down that path, so one read of the layout over Bluetooth leaves the
@@ -24,10 +24,22 @@
  * Studio gets no answer, while the Mac shows the pad connected. Only a restart of
  * the pad cleared it.
  *
+ * The second fix is in write_rpc_req(). ZMK's version copies a write into ZMK
+ * Studio's request buffer, 30 bytes by default, and when the buffer is full it
+ * loops until there is room. That loop runs on Zephyr's "BT RX WQ", a cooperative
+ * thread (K_PRIO_COOP(8)) that never yields, while ZMK Studio's RPC thread, the
+ * only reader of the buffer, runs at the lowest application priority. So a write
+ * longer than the free room never fits: the loop spins for good, the link drops
+ * and the whole pad stays frozen until it is reset. Over Bluetooth the Mac sends a
+ * whole request in one write, so naming a layer with more than about 17 characters
+ * is enough. Here the loop wakes the RPC thread and sleeps until it has read, and
+ * minimalpad.conf makes the buffer 256 bytes, which holds any request Studio sends.
+ *
  * Differences from ZMK's file: this comment, the UUIDs inline (ZMK's uuid.h is
  * private to its studio directory), this build's own latency option, the
- * BUILD_ASSERT, and the bt_conn_unref() marked below. Drop this file, and the
- * two options in Kconfig, once ZMK has the fix and config/west.yml pins it.
+ * BUILD_ASSERT, the bt_conn_unref() marked below, and the wait in write_rpc_req().
+ * Drop this file, and the two options in Kconfig, once ZMK has both fixes (the
+ * connection leak and the write loop) and config/west.yml pins it.
  */
 
 #include <zephyr/device.h>
@@ -114,6 +126,22 @@ static ssize_t write_rpc_req(struct bt_conn *conn, const struct bt_gatt_attr *at
         }
 
         ring_buf_put_finish(rpc_buf, claim_len);
+
+        if (claim_len == 0) {
+            // No room at all, so ZMK Studio's RPC thread has to read before more fits. This
+            // runs on "BT RX WQ", a cooperative thread (K_PRIO_COOP(8)) that never yields, and
+            // the RPC thread runs at a lower priority: ZMK's loop here spins forever and the
+            // pad freezes. Wake the RPC thread and sleep, which lets it run. Keep k_sleep():
+            // k_yield() only gives way to threads of the same or higher priority, so the RPC
+            // thread would never get the CPU.
+            // A claim that only reaches the end of the ring does not sleep: the next turn
+            // takes the room at its start, if there is any, and sleeps only if there is none.
+            // The RPC thread answers without waiting on this thread: indications go out from
+            // their own work item (notify_tx_work), and CONFIG_ZMK_STUDIO_RPC_TX_BUF_SIZE is
+            // 8192, so an answer always fits the output buffer.
+            zmk_rpc_rx_notify();
+            k_sleep(K_MSEC(1));
+        }
     }
 
     zmk_rpc_rx_notify();

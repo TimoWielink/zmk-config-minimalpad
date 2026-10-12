@@ -4,6 +4,7 @@
 #include <dt-bindings/zmk/rgb.h>
 #include <dt-bindings/zmk/outputs.h>
 #include <dt-bindings/minimalpad/dial.h>
+#include <dt-bindings/minimalpad/profile_layer.h>
 
 #define DEFAULT_LAYER 0
 #define CONNECTIONS 1
@@ -41,6 +42,15 @@
             compatible = "minimalpad,behavior-mac-action";
             #binding-cells = <1>;
             display-name = "Mac Action";
+        };
+
+        // Profile layer key: moves between the layers of the profile MinimalPad Studio holds
+        // the pad on, with PL_NEXT, PL_GO and PL_HOLD (dt-bindings/minimalpad/profile_layer.h).
+        // With no profile held it does nothing. No key uses it here; Studio assigns it.
+        profile_layer: profile_layer {
+            compatible = "minimalpad,behavior-profile-layer";
+            #binding-cells = <2>;
+            display-name = "Profile Layer";
         };
     };
 

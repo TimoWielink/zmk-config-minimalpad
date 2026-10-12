@@ -63,7 +63,7 @@
 LOG_MODULE_REGISTER(minimalpad_host, CONFIG_MINIMALPAD_HOST_LOG_LEVEL);
 
 BUILD_ASSERT(sizeof(struct mp_hello_ack) == 7, "HELLO_ACK carries 7 payload bytes");
-BUILD_ASSERT(sizeof(struct mp_state_event) == 6, "STATE carries 6 payload bytes");
+BUILD_ASSERT(sizeof(struct mp_state_event) == 7, "STATE carries 7 payload bytes");
 BUILD_ASSERT(sizeof(struct mp_fallback_event) == 1, "FALLBACK carries 1 payload byte");
 BUILD_ASSERT(sizeof(struct mp_rejected_event) == 2, "REJECTED carries 2 payload bytes");
 
@@ -82,8 +82,12 @@ static const struct mp_host_transport *const transports[] = {
 #endif
 };
 
-/* The layer the host last set: STATE's layer_id, the profile. */
+/* STATE's layer_id, the profile layer the pad is on for the host: the one the host last set, or
+ * the one a &profile_layer key has swapped to since (profile_layers.c). */
 static zmk_keymap_layer_id_t host_layer;
+
+/* STATE's change: why host_layer last changed. */
+static enum mp_layer_change last_change = MP_LAYER_CHANGE_HOST;
 
 /*
  * Sending
@@ -452,6 +456,7 @@ static struct mp_state_event current_state(void) {
         .battery = battery_percent(),
         .leds_on = leds_on(),
         .bt_profile = state_bt_profile(),
+        .change = last_change,
     };
 }
 
@@ -465,12 +470,15 @@ static void state_update(struct k_work *work) {
     const struct mp_state_event state = current_state();
 
     // host-protocol.md, "State": sent whenever the layer, endpoint, LED state or Bluetooth
-    // slot changes. Battery rides along but does not send one by itself.
+    // slot changes. Battery rides along but does not send one by itself. Why the layer changed
+    // counts on its own: a host switch to the layer a key already chose moves nothing, but the
+    // layer is the host's again, and Studio reads that from change.
     const bool changed = !last_state_valid || state.layer_id != last_state.layer_id ||
                          state.top_layer_id != last_state.top_layer_id ||
                          state.endpoint != last_state.endpoint ||
                          state.leds_on != last_state.leds_on ||
-                         state.bt_profile != last_state.bt_profile;
+                         state.bt_profile != last_state.bt_profile ||
+                         state.change != last_state.change;
 
     if (!forced && !changed) {
         return;
@@ -552,10 +560,35 @@ SETTINGS_STATIC_HANDLER_DEFINE(minimalpad_host, "mp_host", NULL, host_settings_s
 #endif /* IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW) && IS_ENABLED(CONFIG_SETTINGS) */
 
 /*
+ * The host's layer
+ */
+
+/*
+ * Switches the pad to a layer for the host: SET_PROFILE, SWITCH_PROFILE and a
+ * fallback. Locking, as &to switches layers, so releasing a &mo for the same
+ * layer cannot drop the profile; and through zmk_keymap_layer_to(), so an app
+ * switch also ends a layer toggled on by hand. Only a &profile_layer key keeps
+ * the other layers, because it swaps (profile_layers.c).
+ */
+static void host_layer_to(zmk_keymap_layer_id_t id) {
+    host_layer = id;
+    last_change = MP_LAYER_CHANGE_HOST;
+    zmk_keymap_layer_to(id, true);
+}
+
+zmk_keymap_layer_id_t mp_host_layer(void) { return host_layer; }
+
+void mp_host_set_layer(zmk_keymap_layer_id_t id, enum mp_layer_change change) {
+    host_layer = id;
+    last_change = change;
+    request_state(false);
+}
+
+/*
  * Fallback, ADR 0005
  */
 
-/* The window the last HEARTBEAT named. SET_PROFILE and SET_LEDS arm it too. */
+/* The window the last HEARTBEAT named. SET_PROFILE, SWITCH_PROFILE and SET_LEDS arm it too. */
 static uint8_t heartbeat_window = CONFIG_MINIMALPAD_HOST_HEARTBEAT_DEFAULT_TIMEOUT;
 
 static void heartbeat_expired(struct k_work *work);
@@ -568,10 +601,13 @@ static void fall_back(enum mp_fallback_reason reason) {
     // Nothing left to watch until a host drives the pad again.
     k_work_cancel_delayable(&heartbeat_work);
 
+    // No host holds a profile any more, so &profile_layer keys have nothing to move between, and
+    // the release of a hold still down does nothing.
+    mp_profile_layers_clear();
+
     // Locking, as for SET_PROFILE, so a layer toggled on with &tog goes as well: Default means
     // the pad as it is out of the box.
-    host_layer = zmk_keymap_layer_default();
-    zmk_keymap_layer_to(host_layer, true);
+    host_layer_to(zmk_keymap_layer_default());
 
     leds_restore();
 
@@ -628,15 +664,14 @@ void mp_host_handle_hello(const struct mp_host_transport *from, const uint8_t *p
         // The Bluetooth slot is claimed on every build, including one without Bluetooth, where
         // the byte can only say MP_BT_PROFILE_NONE: the bit promises the host that STATE
         // carries the field, not that the pad has a slot to report.
-        // Mac actions are claimed when the &mac_action behavior is compiled in, lighting
-        // when src/host/lighting.c is, and features when src/host/lights.c is, which answers
-        // GET_FEATURES.
-        .caps = MP_CAP_PROFILES | MP_CAP_BT_PROFILE |
+        // Mac actions are claimed when the &mac_action behavior is compiled in, and lighting
+        // when src/host/lighting.c is. Features are claimed on every build, because the core
+        // answers GET_FEATURES, with an empty bitmap if it has to.
+        .caps = MP_CAP_PROFILES | MP_CAP_BT_PROFILE | MP_CAP_FEATURES |
                 (IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW) ? MP_CAP_LEDS : 0) |
                 (IS_ENABLED(CONFIG_MINIMALPAD_MAC_ACTION) ? MP_CAP_MAC_ACTIONS : 0) |
                 (IS_ENABLED(CONFIG_MINIMALPAD_HOST_DIAL) ? MP_CAP_LAYER_DIALS : 0) |
-                (IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTING) ? MP_CAP_LIGHTING : 0) |
-                (IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTS) ? MP_CAP_FEATURES : 0),
+                (IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTING) ? MP_CAP_LIGHTING : 0),
         .layer_count = ZMK_KEYMAP_LAYERS_LEN,
         .free_layers = free_layer_slots(),
     };
@@ -672,10 +707,11 @@ void mp_host_handle_set_profile(const struct mp_host_transport *from, const uint
         return;
     }
 
-    // Locking, as &to switches layers, so releasing a &mo for the same layer cannot drop the
-    // profile.
-    host_layer = cmd.layer_id;
-    zmk_keymap_layer_to(cmd.layer_id, true);
+    // SET_PROFILE names no group, so the pad holds none: an older Studio, or a switch to an app
+    // without a profile, leaves &profile_layer keys nothing to move between.
+    mp_profile_layers_clear();
+
+    host_layer_to(cmd.layer_id);
 
     // host-protocol.md, "Switching": every SET_PROFILE describes the whole switch. A flag set
     // takes that part from the frame; a flag clear puts back the pad's own, so switching to an
@@ -686,6 +722,16 @@ void mp_host_handle_set_profile(const struct mp_host_transport *from, const uint
         leds_restore();
     }
 
+    arm_fallback();
+    request_state(false);
+}
+
+void mp_host_switch_profile(zmk_keymap_layer_id_t id) {
+    host_layer_to(id);
+
+    // SWITCH_PROFILE is SET_PROFILE with no flags, so a host colour an older Studio left showing
+    // is put back.
+    leds_restore();
 
     arm_fallback();
     request_state(false);
@@ -775,6 +821,37 @@ void mp_host_handle_get_state(const struct mp_host_transport *from, const uint8_
 
     const struct mp_state_event state = current_state();
     mp_host_reply(from, MP_EVT_STATE, &state, sizeof(state));
+}
+
+/*
+ * One byte holds every feature this firmware has so far. FEATURES is a bitmap
+ * that grows at the end, so a feature past the last byte sent is one the pad
+ * does not have (host-protocol.md, "Features").
+ */
+uint8_t mp_host_features(void) {
+    uint8_t features = 0;
+
+    // The bit promises the &profile_layer key as well as SWITCH_PROFILE, so a build without the
+    // key does not announce it: a host would put a key on the pad that does nothing.
+    if (IS_ENABLED(CONFIG_MINIMALPAD_PROFILE_LAYERS) &&
+        IS_ENABLED(CONFIG_MINIMALPAD_PROFILE_LAYER_BEHAVIOR)) {
+        features |= BIT(MP_FEATURE_PROFILE_LAYERS);
+    }
+
+    if (IS_ENABLED(CONFIG_MINIMALPAD_HOST_LIGHTS)) {
+        features |= BIT(MP_FEATURE_LAYER_LIGHTS) | BIT(MP_FEATURE_KEY_LIGHTS);
+    }
+
+    return features;
+}
+
+void mp_host_handle_get_features(const struct mp_host_transport *from, const uint8_t *payload) {
+    ARG_UNUSED(payload);
+
+    // Always one byte, even when it is 0x00: a build without any feature still answers, so a host
+    // that asked can tell "none" from "this pad does not know the question".
+    const uint8_t features = mp_host_features();
+    mp_host_reply(from, MP_EVT_FEATURES, &features, sizeof(features));
 }
 
 /*

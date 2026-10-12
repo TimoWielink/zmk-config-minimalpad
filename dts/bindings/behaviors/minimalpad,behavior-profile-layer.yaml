@@ -1,0 +1,9 @@
+# The &profile_layer key: Next layer, Go to and Hold for, within the layers of
+# the profile MinimalPad Studio holds the pad on (src/behaviors/profile_layer.c)
+# SPDX-License-Identifier: MIT
+
+description: Profile layer key, which moves between the layers of the held profile
+
+compatible: "minimalpad,behavior-profile-layer"
+
+include: two_param.yaml

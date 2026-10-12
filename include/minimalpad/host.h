@@ -1,9 +1,9 @@
 /*
  * Minimalpad host module
  *
- * What the frame reader (frame.c), the core (host.c, with dial.c, lighting.c
- * and lights.c) and the transports share. The wire format itself lives in
- * mp_host_protocol.h, a verbatim copy of
+ * What the frame reader (frame.c), the core (host.c, with dial.c, lighting.c,
+ * lights.c and profile_layers.c) and the transports share. The wire format
+ * itself lives in mp_host_protocol.h, a verbatim copy of
  * minimalpad-studio-mac/docs/protocol/mp_host_protocol.h: change it there.
  *
  * Threading: the core runs on the system work queue, the queue ZMK processes
@@ -19,6 +19,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+
+#include <zmk/keymap.h>
 
 #include <minimalpad/mp_host_protocol.h>
 
@@ -90,6 +92,7 @@ void mp_host_handle_heartbeat(const struct mp_host_transport *from, const uint8_
 void mp_host_handle_set_leds(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_enter_bootloader(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_get_state(const struct mp_host_transport *from, const uint8_t *payload);
+void mp_host_handle_get_features(const struct mp_host_transport *from, const uint8_t *payload);
 /* src/host/dial.c, built with CONFIG_MINIMALPAD_HOST_DIAL. */
 /*
  * The dial value a turn gets when ZMK gave it to the &host_dial binding on
@@ -104,13 +107,18 @@ void mp_host_handle_get_dial(const struct mp_host_transport *from, const uint8_t
 void mp_host_handle_get_lighting(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_set_lighting(const struct mp_host_transport *from, const uint8_t *payload);
 /* src/host/lights.c, built with CONFIG_MINIMALPAD_HOST_LIGHTS. */
-void mp_host_handle_get_features(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_set_layer_light(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_get_layer_light(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_show_pad_lighting(const struct mp_host_transport *from,
                                       const uint8_t *payload);
 void mp_host_handle_set_key_light(const struct mp_host_transport *from, const uint8_t *payload);
 void mp_host_handle_get_key_lights(const struct mp_host_transport *from, const uint8_t *payload);
+/*
+ * src/host/profile_layers.c, built with CONFIG_MINIMALPAD_PROFILE_LAYERS. The
+ * payload's length is in the payload, 2 + count, and frame.c has checked the
+ * frame holds that much, so the count layer ids are there to read.
+ */
+void mp_host_handle_switch_profile(const struct mp_host_transport *from, const uint8_t *payload);
 
 /*
  * Answers a dropped command with REJECTED, to the host that sent it only. A
@@ -252,3 +260,86 @@ int mp_host_set_own_effect(uint8_t effect);
  * reserved slot no layer has taken.
  */
 bool mp_host_layer_in_keymap(uint8_t id);
+
+/*
+ * The features this build has, as the first byte of FEATURES: one bit for each
+ * MP_FEATURE_* the build carries. GET_FEATURES answers with it, and a build
+ * without any answers 0x00. Safe from any thread.
+ */
+uint8_t mp_host_features(void);
+
+/*
+ * The profile layer the pad is on for the host, STATE's layer_id, host.c: the
+ * layer the host last set, or the one a &profile_layer key has swapped to
+ * since. Default while nothing holds the pad, and during Hold for Default. Call
+ * from the system work queue, where ZMK also runs key behaviors.
+ */
+zmk_keymap_layer_id_t mp_host_layer(void);
+
+/*
+ * Records that a &profile_layer key moved the profile layer to `id`, and why,
+ * and sends STATE. The caller has already swapped the layers in the keymap.
+ * Call from the system work queue.
+ */
+void mp_host_set_layer(zmk_keymap_layer_id_t id, enum mp_layer_change change);
+
+/*
+ * The switch SWITCH_PROFILE makes once profile_layers.c has checked the frame
+ * and kept its group: SET_PROFILE with no flags, so through
+ * zmk_keymap_layer_to(), with the pad's own colour back and the fallback window
+ * open. Call from the system work queue.
+ */
+void mp_host_switch_profile(zmk_keymap_layer_id_t id);
+
+#if IS_ENABLED(CONFIG_MINIMALPAD_PROFILE_LAYERS)
+
+/*
+ * The layers of the profile a host holds, src/host/profile_layers.c
+ * (host-protocol.md, "Profile layers"). SWITCH_PROFILE sets the group;
+ * &profile_layer keys move within it by swapping the profile layer, which
+ * leaves every other active layer as it is. One spinlock guards the group and
+ * the hold, and the keymap is called with it released. It does not guard
+ * mp_host_layer(), which a swap reads and writes outside it, so call these
+ * from the system work queue, as every caller does at the ZMK revision pinned
+ * in config/west.yml (9ebbeff): the transports' commands, the matrix scan and
+ * the sensors, and so the behaviors ZMK raises from them.
+ *
+ * Next, Go to and Hold for return 0, or -ENOENT when no group is held, the
+ * target is not in it, or the target is no longer a layer in the keymap (ZMK
+ * Studio can remove one after SWITCH_PROFILE checked the group); then nothing
+ * changes, and a hold stays current. A swap to the layer the pad is already on
+ * does nothing, except that a Go to which ends a hold still sends STATE with
+ * change MP_LAYER_CHANGE_KEY, and so does a release which ends one on the layer
+ * already shown, with MP_LAYER_CHANGE_HOLD_ENDED.
+ */
+
+/* Swaps to the layer after the current one in the group, wrapping round, or to
+ * the group's first when the pad is on none of them, as during Hold for
+ * Default. A layer the keymap no longer holds is skipped, and with no other
+ * layer to go to Next returns -ENOENT. */
+int mp_profile_layer_next(void);
+
+/* Swaps to `target`, a layer in the group and in the keymap. */
+int mp_profile_layer_go(zmk_keymap_layer_id_t target);
+
+/*
+ * Swaps to `target`, a layer in the group and in the keymap, or Default, until
+ * the hold is released. `token` names this hold for mp_profile_layer_release();
+ * it is never 0, and is set to 0 when the call fails. The newest hold is the
+ * current one and keeps the layer the first one left.
+ */
+int mp_profile_layer_hold(zmk_keymap_layer_id_t target, uint32_t *token);
+
+/* Swaps back to the layer the hold left, if `token` is still the current hold.
+ * Otherwise, and for token 0, does nothing. */
+void mp_profile_layer_release(uint32_t token);
+
+/* Forgets the group and any hold, so a later release does nothing: SET_PROFILE,
+ * a fallback and a release (HEARTBEAT 0, which falls back) call it. */
+void mp_profile_layers_clear(void);
+
+#else
+
+static inline void mp_profile_layers_clear(void) {}
+
+#endif /* IS_ENABLED(CONFIG_MINIMALPAD_PROFILE_LAYERS) */

@@ -1,6 +1,6 @@
 # MinimalPad host module
 
-A small addition to the pad's firmware for MinimalPad Studio for Mac. The Bluetooth channel and Profile switching have run on a pad. Firmware 0.3.0 adds USB Profile control; that new route and Profile colour still need their physical-pad check after flashing. Firmware 0.4.0 adds the Bluetooth device to the pad's state report, which needs the same check. Firmware 0.5.0 adds the Mac action key, which tells Studio when it goes down or up so Studio can open an app. Firmware 0.6.0 gives every layer a dial Studio can set and the pad keeps (`SET_DIAL`, `GET_DIAL`): `&host_dial` taps a key, scrolls or steps the underglow. Firmware 0.7.0 lets Studio read and set the pad's own lighting, which the pad keeps: on or off, colour, brightness, effect and speed (`GET_LIGHTING`, `SET_LIGHTING`). Firmware 0.8.0 lets Studio give every layer above Default a light and every key on every layer one of its own, which the pad keeps and draws over its own lighting (`SET_LAYER_LIGHT`, `SET_KEY_LIGHT`, announced by `GET_FEATURES`).
+A small addition to the pad's firmware for MinimalPad Studio for Mac. The Bluetooth channel and Profile switching have run on a pad. Firmware 0.3.0 adds USB Profile control; that new route and Profile colour still need their physical-pad check after flashing. Firmware 0.4.0 adds the Bluetooth device to the pad's state report, which needs the same check. Firmware 0.5.0 adds the Mac action key, which tells Studio when it goes down or up so Studio can open an app. Firmware 0.6.0 gives every layer a dial Studio can set and the pad keeps (`SET_DIAL`, `GET_DIAL`): `&host_dial` taps a key, scrolls or steps the underglow. Firmware 0.7.0 lets Studio read and set the pad's own lighting, which the pad keeps: on or off, colour, brightness, effect and speed (`GET_LIGHTING`, `SET_LIGHTING`). Firmware 0.8.0 lets Studio give every layer above Default a light and every key on every layer one of its own, which the pad keeps and draws over its own lighting (`SET_LAYER_LIGHT`, `SET_KEY_LIGHT`, announced by `GET_FEATURES`). Firmware 0.9.0 lets a profile have several layers that the pad switches between by itself (`SWITCH_PROFILE`, the `&profile_layer` key, announced by `GET_FEATURES`), and saves a layer's dial the way it saves lights, after the settings have loaded, instead of from its command handler.
 
 ## What it does
 
@@ -10,6 +10,7 @@ ZMK Studio already lets an app edit the keymap, but it cannot tell the pad which
 - **Colour.** A Profile can set one temporary global Solid underglow colour, so you can see which Profile is active.
 - **Lighting.** Studio can read and change the pad's own lighting, the one its Connections & LEDs keys change. The pad keeps it, so it stays without Studio.
 - **Layer and key lights.** Studio can give a layer, and any key on any layer, a colour of its own or switch its light off. The pad keeps them and draws them over its own lighting, so a layer or a key looks the same without Studio, and the pad shows its own lighting for a few seconds while you change it.
+- **Several layers for one app.** A profile can have several layers. Studio tells the pad which ones belong to the app in front, and keys on the pad switch between them with no round trip to the Mac: Next layer, Go to, and Hold for, Default included ([Profile layers](#profile-layers)).
 - **Bluetooth device.** The pad says which of its Bluetooth devices is selected, so Studio can show you whether the pad is typing to this Mac or to another one.
 - **Safety net.** Studio sends a heartbeat every 2 seconds. If it stops (Studio quits, the Mac sleeps, the pad goes out of range), the pad returns to its Default layer and its own colours by itself within 6 seconds.
 
@@ -26,27 +27,31 @@ Without Studio running, nothing changes: the pad behaves exactly as its keymap s
 | Path | What it is |
 | --- | --- |
 | `src/host/frame.c` | Reads command frames and checks them before anything runs |
-| `src/host/host.c` | What each command does: layers, LEDs, heartbeat and fallback, state reports |
+| `src/host/host.c` | What each command does: layers, LEDs, heartbeat and fallback, state reports, and `GET_FEATURES`, which it answers on every build |
 | `src/host/transport_gatt.c` | The Bluetooth GATT service the Mac talks to |
 | `src/host/transport_usb.c` | Shares ZMK Studio's one USB serial stream without adding another port |
 | `src/behaviors/mac_action.c` | The `&mac_action` key: sends `ACTION_EVENT` when it goes down or up, and does nothing else |
 | `dts/bindings/behaviors/minimalpad,behavior-mac-action.yaml` | Tells the keymap and ZMK Studio what `&mac_action` is and that it takes one number |
 | `src/behaviors/host_dial.c` | `&host_dial`, the dial on Default and Connections & LEDs: taps a key, scrolls or steps the underglow, with modifiers, as its layer's dial value says |
-| `src/host/dial.c` | Each layer's dial: `SET_DIAL` and `GET_DIAL`, saving values in the pad's settings, and which value a turn gets |
+| `src/host/dial.c` | Each layer's dial: `SET_DIAL` and `GET_DIAL`, saving values in the pad's settings 2 seconds after the last change, and which value a turn gets |
 | `src/host/lighting.c` | The pad's own lighting: `GET_LIGHTING` and `SET_LIGHTING`, reporting changes made on the pad, the speed count, and saving colours |
-| `src/host/lights.c` | Each layer's and key's light: `GET_FEATURES`, `SET_LAYER_LIGHT`, `GET_LAYER_LIGHT`, `SHOW_PAD_LIGHTING`, `SET_KEY_LIGHT` and `GET_KEY_LIGHTS`, saving them in the pad's settings, which light a key shows, and when the pad shows its own lighting instead |
+| `src/host/lights.c` | Each layer's and key's light: `SET_LAYER_LIGHT`, `GET_LAYER_LIGHT`, `SHOW_PAD_LIGHTING`, `SET_KEY_LIGHT` and `GET_KEY_LIGHTS`, saving them in the pad's settings, which light a key shows, and when the pad shows its own lighting instead |
+| `src/host/profile_layers.c` | `SWITCH_PROFILE`, the layers of the profile the pad holds (its group), and the swap and the holds that `&profile_layer` makes |
+| `src/behaviors/profile_layer.c` | `&profile_layer`: Next layer, Go to and Hold for, with what ZMK Studio needs to put it on a key |
 | `src/leds/light_layers.c` | The LED strip between ZMK's underglow and the WS2812 chain that paints those lights over the underglow's frame |
 | `dts/bindings/led_strip/minimalpad,light-layers.yaml` | Tells the overlay what that strip is: the chain it feeds, its length and the key under each LED |
+| `dts/bindings/behaviors/minimalpad,behavior-profile-layer.yaml` | Tells the keymap what `&profile_layer` is and that it takes a mode and a layer id |
 | `dts/bindings/behaviors/minimalpad,behavior-host-dial.yaml` | Tells the keymap what `&host_dial` is and that it takes clockwise and counter-clockwise values until Studio sets others |
 | `include/dt-bindings/minimalpad/dial.h` | Names for dial values that are not keys, such as `DIAL_SCROLL_UP` and `DIAL_LIGHTS_BRIGHTER`, for the keymap |
+| `include/dt-bindings/minimalpad/profile_layer.h` | Names for `&profile_layer`'s modes, `PL_NEXT`, `PL_GO` and `PL_HOLD`, for the keymap |
 | `dts/bindings/vendor-prefixes.txt` | Registers the `minimalpad` vendor prefix, so the build does not warn about it |
 | `include/minimalpad/mp_host_protocol.h` | The wire format, copied byte for byte from MinimalPad Studio for Mac |
 | `include/minimalpad/host.h` | How those three files fit together |
 | `Kconfig`, `CMakeLists.txt`, `zephyr/module.yml` | Make this repo a Zephyr module, so ZMK compiles the code |
-| `boards/shields/minimalpad/minimalpad.keymap` | 14 reserved layer slots instead of 3, so there is room for profiles |
+| `boards/shields/minimalpad/minimalpad.keymap` | 14 reserved layer slots instead of 3, so there is room for profiles, and the `profile_layer` behavior, which no key uses until Studio assigns it |
 | `boards/shields/minimalpad/minimalpad.overlay` | The `light_layers` node, which is the underglow's strip, and the key under each LED in chain order |
 | `boards/shields/minimalpad/minimalpad.conf` | `CONFIG_BT_ATT_TX_COUNT=10`, so a whole layer's light answers are not lost over Bluetooth |
-| `.github/workflows/build.yml` | Builds also run when only module code changes |
+| `.github/workflows/build.yml` | Builds also run when only module code or a devicetree binding changes |
 
 The firmware, `minimalpad_with_studio`, has 16 layers: Default, Connections & LEDs and 14 free for profiles. The reserved slots are only compiled into builds with ZMK Studio, and since 0.3.0 that is the only build.
 
@@ -62,21 +67,21 @@ That version byte is frozen at `0x01` and will not change: raising it would make
 | Commands, Mac to pad | Events, pad to Mac |
 | --- | --- |
 | `HELLO`: who are you? | `HELLO_ACK`: firmware version, capabilities, free layers |
-| `SET_PROFILE`: switch layer, and optionally colour | `STATE`: active profile, top layer, connection, battery, LEDs, Bluetooth device |
+| `SET_PROFILE`: switch layer, and optionally colour. `SWITCH_PROFILE`: switch layer, and say which layers the profile has | `STATE`: active profile, top layer, connection, battery, LEDs, Bluetooth device, and why the layer changed |
 | `HEARTBEAT`: still here; `0` means let go now | `FALLBACK`: back on Default, and why |
 | `SET_LEDS`: colour preview | `REJECTED`: a command was refused, and why |
 | `GET_STATE`: what are you doing? | `ACTION_EVENT`: a Mac action key went down or up, for Studio to act on |
 | `ENTER_BOOTLOADER`: reboot into flash mode, guarded by a magic number | `KEY_EVENT`, `DIAL_EVENT`: reserved for later |
 | `SET_DIAL`, `GET_DIAL`: one layer's dial, kept on the pad | `DIAL_STATE`: one layer's dial, and where it comes from |
 | `GET_LIGHTING`, `SET_LIGHTING`: the pad's own lighting, kept on the pad | `LIGHTING_STATE`: the pad's own lighting, and whether it is resting |
-| `GET_FEATURES`: which features does this pad have? | `FEATURES`: a bitmap of features: layer lights, key lights |
+| `GET_FEATURES`: which features does this pad have? The host core answers, on every build | `FEATURES`: a bitmap of features: profile layers, layer lights, key lights |
 | `SET_LAYER_LIGHT`, `GET_LAYER_LIGHT`: a layer's light, kept on the pad | `LAYER_LIGHT_STATE`: a layer's light |
 | `SET_KEY_LIGHT`, `GET_KEY_LIGHTS`: the lights of keys on a layer, kept on the pad | `KEY_LIGHTS_STATE`: the lights of up to three keys |
 | `SHOW_PAD_LIGHTING`: show the pad's own lighting for some seconds | None: the lights are the answer |
 
 Rules the firmware keeps:
 
-- **Default when alone.** It falls back when the heartbeat stops, when Studio lets go, when USB is unplugged while it carries the keys, and when you switch Bluetooth profile.
+- **Default when alone.** It falls back when the heartbeat stops, when Studio lets go, when USB is unplugged while it carries the keys, and when you switch Bluetooth profile. A fallback also forgets the profile's layers, so `&profile_layer` keys do nothing again ([Profile layers](#profile-layers)).
 - **One active connection in charge.** USB commands are accepted only while USB is ZMK's selected output. Bluetooth commands are accepted only while Bluetooth is selected and from the Mac on the active Bluetooth profile. Other bonded Macs can still ask what the pad is doing.
 - **All or nothing.** A command is checked in full before any part of it runs. A bad colour or unknown layer changes nothing and is answered with `REJECTED`.
 - **Your colours are yours.** A Profile colour is temporary. The pad keeps its own HSB and effect aside, and puts them back on fallback, when a Profile has no colour, and after deep sleep, restart or power loss. It never turns the lights on or changes animation speed. Only `SET_LIGHTING`, a change you make in Studio, changes the pad's own lighting ([Lighting](#lighting)).
@@ -303,28 +308,30 @@ Firmware 0.8.0 lets a host give every layer above Default a light, and every key
 
 | ID | Name | Direction | Payload | Who may send it | Answer |
 | --- | --- | --- | --- | --- | --- |
-| `0x0B` | `GET_FEATURES` | Mac to pad | none | Any host | `FEATURES` to that host only |
+| `0x0B` | `GET_FEATURES` | Mac to pad | none | Any host | `FEATURES` to that host only. Answered by `host.c` |
 | `0x0D` | `SET_LAYER_LIGHT` | Mac to pad | 5 bytes | The active host only | `LAYER_LIGHT_STATE` to the sender, or `REJECTED` |
 | `0x0E` | `GET_LAYER_LIGHT` | Mac to pad | 1 byte | Any host | `LAYER_LIGHT_STATE` to that host only |
 | `0x0F` | `SHOW_PAD_LIGHTING` | Mac to pad | 1 byte | The active host only | None but `REJECTED`: the lights are the answer |
 | `0x10` | `SET_KEY_LIGHT` | Mac to pad | 7 bytes | The active host only | A `KEY_LIGHTS_STATE` for each page that holds a key in `keys`, to the sender, or `REJECTED` |
 | `0x11` | `GET_KEY_LIGHTS` | Mac to pad | 2 bytes | Any host | One `KEY_LIGHTS_STATE` to that host only |
-| `0x8A` | `FEATURES` | pad to Mac | 1 to 16 bytes | | |
+| `0x8A` | `FEATURES` | pad to Mac | 1 to 16 bytes | | Sent by `host.c` |
 | `0x8B` | `LAYER_LIGHT_STATE` | pad to Mac | 5 bytes | | |
 | `0x8C` | `KEY_LIGHTS_STATE` | pad to Mac | 7 to 15 bytes | | |
 
-`0x0C` stays unused: it is kept for `SWITCH_PROFILE`. Multi-byte fields are little-endian, as everywhere in this protocol. A payload longer than the one named here is from a later revision: each end reads the fields it knows and ignores the rest. Every answer goes only to the host that asked, as `DIAL_STATE` does. Unlike `LIGHTING_STATE`, nothing here is volunteered to other hosts.
+`GET_FEATURES` and `FEATURES` belong to the host core (`host.c`) and not to the lights: they are answered on every build, so they are there whatever `CONFIG_MINIMALPAD_HOST_LIGHTS` says ([Features](#features)). `0x0C` is `SWITCH_PROFILE` ([Profile layers](#profile-layers)). Multi-byte fields are little-endian, as everywhere in this protocol. A payload longer than the one named here is from a later revision: each end reads the fields it knows and ignores the rest. Every answer goes only to the host that asked, as `DIAL_STATE` does. Unlike `LIGHTING_STATE`, nothing here is volunteered to other hosts.
 
 ### Features
 
-`HELLO_ACK` has no capability bit left to give, so bit 7 announces `GET_FEATURES` instead, and `FEATURES` is a bitmap of up to 128 features: bit n is bit n mod 8 of byte n / 8. A pad sends as many bytes as its highest feature needs, so a feature past the end of the payload is one the pad does not have. This firmware sends one byte, `0x06`.
+`HELLO_ACK` has no capability bit left to give, so bit 7 announces `GET_FEATURES` instead, and `FEATURES` is a bitmap of up to 128 features: bit n is bit n mod 8 of byte n / 8. A pad sends as many bytes as its highest feature needs, so a feature past the end of the payload is one the pad does not have. This firmware sends one byte, `0x07`.
 
-| Feature | Name | Commands and events |
-| --- | --- | --- |
-| 0 | Profile layers | Reserved. No firmware sets it in 0.8.0 |
-| 1 | Layer lights | `SET_LAYER_LIGHT`, `GET_LAYER_LIGHT`, `LAYER_LIGHT_STATE`, `SHOW_PAD_LIGHTING` |
-| 2 | Key lights | `SET_KEY_LIGHT`, `GET_KEY_LIGHTS`, `KEY_LIGHTS_STATE` |
-| 3-127 | | Reserved |
+| Feature | Name | Commands and events | Built with |
+| --- | --- | --- | --- |
+| 0 | Profile layers | `SWITCH_PROFILE`, the `&profile_layer` key and `STATE`'s `change` byte ([Profile layers](#profile-layers)) | `CONFIG_MINIMALPAD_PROFILE_LAYERS` and `CONFIG_MINIMALPAD_PROFILE_LAYER_BEHAVIOR` |
+| 1 | Layer lights | `SET_LAYER_LIGHT`, `GET_LAYER_LIGHT`, `LAYER_LIGHT_STATE`, `SHOW_PAD_LIGHTING` | `CONFIG_MINIMALPAD_HOST_LIGHTS` |
+| 2 | Key lights | `SET_KEY_LIGHT`, `GET_KEY_LIGHTS`, `KEY_LIGHTS_STATE` | `CONFIG_MINIMALPAD_HOST_LIGHTS` |
+| 3-127 | | Reserved | |
+
+The host core answers `GET_FEATURES` and sets `MP_CAP_FEATURES` in `HELLO_ACK`, on every build. They do not depend on the lights, so a build with `CONFIG_MINIMALPAD_HOST_LIGHTS=n` still announces features and answers with only the bits it has: `0x01`, with profile layers on. A build with neither answers with one byte, `0x00`, so a host can tell "no features" from a pad that does not know the question. Bit 0 promises the `&profile_layer` key as well as `SWITCH_PROFILE`, so a build with `CONFIG_MINIMALPAD_PROFILE_LAYER_BEHAVIOR=n` leaves it clear, though it still handles `SWITCH_PROFILE`.
 
 ### The light payload
 
@@ -444,6 +451,7 @@ The strip asks from the underglow's work queue, 16 times per frame, while comman
 - A change applies at once, and the pad saves it once changes have stopped for 2 seconds. Dragging a colour across its range costs one write. A restart or power cut inside those 2 seconds loses the last change, so a host does not say "saved" when the pad answers.
 - A layer's light is the setting `mp_light/<layer id>`, 4 bytes. Its key lights are `mp_klight/<layer id>`, 64 bytes: 16 lights in key position order. A layer whose light is Inherit, or whose key lights are all Inherit, has no entry.
 - Nothing is saved before the settings have loaded. The save runs on the system work queue, never from the settings commit: the commit runs on the thread loading the settings, which holds their lock until every commit has run, ZMK's Bluetooth start-up among them, and Bluetooth sends its commands from the system work queue. A save waiting for the lock there would hang the pad at start, as `lighting.c`'s `started` explains. So a change made before the load has finished is only marked, and nothing is scheduled for it. The commit then schedules the save for 2 seconds later. Starting that timer is not a settings call, and the first save comes at least 2 seconds after the commit, long after ZMK's Bluetooth commit has run and the lock has been let go.
+- **A layer's dial is saved the same way**, from 0.9.0. `SET_DIAL` changes the dial at once and marks the layer, then answers with `DIAL_STATE` at once, without waiting for the save, so the answer no longer means the dial is saved. The save comes 2 seconds after the last change, from the system work queue, and never before the settings have loaded, for the reason above. Before 0.9.0 the command handler wrote the setting before it answered. A layer's dial is the setting `mp_dial/<layer id>`, 8 bytes: `cw`, then `ccw`, u32 each. A layer whose dial is cleared has no entry. A restart or power cut inside the 2 seconds loses the last change, so a host does not say "saved" when the pad answers.
 - A saved light is ignored, with a warning, when it is not a light the pad would accept: a kind above 2, a hue or saturation out of range, an Inherit or Off with a hue or saturation, a layer light on Default that is not Inherit, or any of a layer's 16 key lights. That layer then starts as Inherit. An entry of the wrong length is refused.
 - Studio clears a layer's light and key lights when it makes or removes the layer, as it does the layer's dial, so a reused layer id starts clean. Clearing an empty slot is accepted.
 
@@ -474,6 +482,134 @@ These are Studio's rules. They sit here too, so both ends implement the same thi
 - Check the ranges before sending and never clamp.
 - Never say "saved" when the pad answers. Nothing of the pad's lighting is stored on the Mac.
 
+## Profile layers
+
+Firmware 0.9.0 lets a profile have several layers, and the pad switches between them by itself. That is instant and needs no round trip to the Mac, so it works over a flaky Bluetooth link, and a hold keeps its press and release timing. Studio tells the pad which layers belong to the profile it holds, with `SWITCH_PROFILE`, and `&profile_layer` keys on the pad move between them. This is protocol revision 7, announced by feature 0 of `FEATURES` ([Features](#features)). It covers `SWITCH_PROFILE`, the `&profile_layer` key and the `change` byte on the end of `STATE`.
+
+### Command and event
+
+| ID | Name | Direction | Payload | Who may send it | Answer |
+| --- | --- | --- | --- | --- | --- |
+| `0x0C` | `SWITCH_PROFILE` | Mac to pad | 3 to 17 bytes | The active host only | `STATE` with `change` 0, to every host listening, or `REJECTED` to the sender |
+| `0x85` | `STATE` | pad to Mac | 7 bytes | | Grows by `change`, below |
+
+A payload longer than the one named here is from a later revision: each end reads the fields it knows and ignores the rest.
+
+### `SWITCH_PROFILE`
+
+`SET_PROFILE` with no flags, plus the profile's layers, in one frame, so a switch cannot half-apply. 2 + `count` bytes, 3 to 17, so at most 20 with the header.
+
+| Offset | Field | Type | Range | Notes |
+| --- | --- | --- | --- | --- |
+| 0 | `layer_id` | u8 | One of the ids | ZMK's stable layer id of the layer to switch to |
+| 1 | `count` | u8 | 1-15 | How many ids follow |
+| 2... | layer ids | u8 each | A layer in the keymap, not Default, none twice | The profile's layers, in the order Next goes through them |
+
+A pad reads `count` ids and ignores what trails them, as a later revision adds fields there.
+
+- **An app switch.** Like `SET_PROFILE`, it switches layers as `&to` does: the layer it names is the one profile layer left on, and a layer toggled on by hand ends there. Only the swaps inside a profile keep other layers ([The swap](#the-swap)).
+- **The answer.** `STATE` with `change` 0. The pad sends a `STATE` when anything in it differs from the last it sent, `change` included, so a switch to the layer a key had chosen still brings one: that key's `STATE` said `change` 1.
+- **A host colour.** If an older Studio's host colour was showing, it is put back, as a `SET_PROFILE` with no flags puts it back.
+- **The heartbeat.** Like `SET_PROFILE`, it opens the heartbeat window if none is running, and only the active host may send it. A hold still down ends with the switch, and its key's release does nothing.
+
+The pad checks the whole frame before it applies any of it, so a bad one changes nothing. The rows are checked in order, so a frame wrong in two ways gets the first row's reason.
+
+| When | Answer |
+| --- | --- |
+| Payload shorter than 3 bytes, or than 2 + `count`. Every `count` above 15 is here: no frame holds that many ids | `REJECTED`, command `0x0C`, reason 0 |
+| Not from the active host | `REJECTED`, reason 3 |
+| `count` 0, `layer_id` not among the ids, Default among the ids, or an id twice | `REJECTED`, reason 1 |
+| An id that is not a layer in the keymap | `REJECTED`, reason 2 |
+| Otherwise | Applied, then `STATE` with `change` 0 |
+
+### The group
+
+The group is the profile's layers as the pad knows them: an ordered list of up to 15 layer ids, kept in RAM.
+
+- `SWITCH_PROFILE` sets it.
+- `SET_PROFILE`, a fallback and a release (`HEARTBEAT` with `timeout` 0) clear it.
+- It is never saved. It belongs to the host that holds the pad, and a pad that restarts is held by no host.
+
+### The `&profile_layer` key
+
+A key behavior, not a frame. It takes two parameters, a mode and a layer id, and ZMK Studio shows it as "Profile Layer":
+
+| Parameter | Meaning |
+| --- | --- |
+| `param1` | The mode, below: `PL_NEXT`, `PL_GO` or `PL_HOLD` from `dt-bindings/minimalpad/profile_layer.h`. ZMK Studio shows them as "Next layer", "Go to" and "Hold for" |
+| `param2` | A layer id: the layer to go to, or to hold for. 0 for Next |
+
+In a keymap that is `&profile_layer PL_NEXT 0` or `&profile_layer PL_GO 5`. No key of the default keymap uses it: Studio puts it on a key with ZMK Studio's `set_layer_binding`. ZMK checks the binding against the behavior's metadata first, so that has two sets, as `&bt` has: Next alone (`param2` 0), and Go to or Hold for with a layer id.
+
+| Mode | Value | Press | Release |
+| --- | --- | --- | --- |
+| Next | 0 | Swap to the next layer in the group, wrapping round, and skipping a layer the keymap no longer holds. The group's first when the pad is on none of its layers, as it is during Hold for Default | — |
+| Go to | 1 | Swap to the layer, if it is in the group | — |
+| Hold for | 2 | Remember the layer the pad is on, then swap to the target: a layer in the group, or Default, which means the profile layer goes off | If the hold is still current, swap back to the remembered layer |
+
+The key does nothing, and the press goes no further, when:
+
+- no host holds a profile with a group;
+- Go to or Hold for names a layer that is not in the group. Default is a target for Hold for only, and only with a group held, and a layer of another profile is never a target;
+- Go to or Hold for names a layer the keymap no longer holds. `SWITCH_PROFILE` checks the group's layers once, and ZMK Studio can remove one afterwards. Next skips such a layer;
+- it is a Next with no other layer in the group, in the keymap, to go to, as in an app with one layer;
+- it is a Hold for on a key position past the keys, such as a combo's: it has nowhere to keep the hold. Next and Go to work there.
+
+A key that does nothing leaves a hold that is current as it is.
+
+### The swap
+
+A swap switches the profile layer and leaves everything else as it was: it turns off the profile layer the pad is on, turns on the target, sets the layer the host last set to the target, and sends `STATE`.
+
+- It does not depend on the order of the layers, so Hold for Default and Hold for a sibling both work, and a pad layer held or toggled on above the profile survives. An app switch is not a swap.
+- Default is never turned off or on. ZMK keeps it on, and it is what shows when the profile layer goes off.
+- Lights and dials follow without work of their own. A profile layer is an ordinary layer to the light rule ([The light rule](#the-light-rule)) and to the dial, so the next frame draws the new layer's lights and a turn gets its dial.
+- The group and the hold are under one short spinlock, so they are always read and changed whole. The swaps themselves rest on every caller running on the system work queue: both transports' commands, the matrix scan and the sensors, and so the behaviors ZMK raises from them, all do at the ZMK revision `config/west.yml` pins.
+
+### Holds
+
+- **Press.** The pad remembers the layer it is on, unless a hold is already current, and swaps to the target. `STATE` carries `change` 2.
+- **Release.** If the hold is still current, the pad swaps back to the layer it remembered. `STATE` carries `change` 3.
+- **A hold stops being current** when anything else moves the profile layer: Next, Go to, another hold, `SWITCH_PROFILE`, `SET_PROFILE`, a fallback or a release. The release of a hold that is no longer current does nothing, and the move that ended it stands.
+- **Two holds.** The newest hold wins and keeps the layer the first one left. Letting go of the older key does nothing, and letting go of the newest, or of every hold key in any order, ends where the first went down.
+- **A Hold for the layer already shown** begins silently: nothing moves and no `STATE` goes out. Its release reports `change` 3 (hold ended).
+- **A Go to that ends a hold on the layer already shown** reports `change` 1, though nothing moves, so a host learns the layer is now the key's choice and not the hold's. With no hold current, a Go to the layer already shown does nothing. A Next never lands on the layer already shown: with no other layer to go to it does nothing, and a hold stays current.
+- **During Hold for Default** `STATE`'s `layer_id` is Default's id. A Next then ends the hold and goes to the group's first layer.
+- The pad does not volunteer a `STATE` that would repeat the last it sent in `layer_id`, `top_layer_id`, `endpoint`, `leds_on`, `bt_profile` and `change`, so a change to `battery` alone never sends one. Three kinds always go out, repeat or not: the reply to `GET_STATE`, the `STATE` sent when a host arrives (the event characteristic subscribed, or a `HELLO` answered), and the one sent when the active Bluetooth profile reports a change, including connecting or pairing. So when the last `STATE` already says the same layer and the same `change`, as it does for a Hold for the layer already shown, released right after another hold ended there (`change` 3), nothing goes out: a host already has what it would say.
+
+### The `change` byte
+
+`change` is the seventh byte of `STATE`, after `bt_profile`, and explains a change of `layer_id`. Firmware with feature 0 sends it with every `STATE`, and always sends `bt_profile` before it, `0xFF` if the pad has no slot.
+
+| Value | Name | Meaning |
+| --- | --- | --- |
+| 0 | `MP_LAYER_CHANGE_HOST` | The host, or anything else: `SET_PROFILE`, `SWITCH_PROFILE`, a fallback or a release, and the pad's start |
+| 1 | `MP_LAYER_CHANGE_KEY` | A Next layer or Go to key |
+| 2 | `MP_LAYER_CHANGE_HOLD_BEGAN` | A Hold for key went down |
+| 3 | `MP_LAYER_CHANGE_HOLD_ENDED` | A Hold for key came up |
+
+`layer_id` keeps its meaning, the profile layer the pad is on for the host. `top_layer_id` is still the highest active layer, so the two differ while a pad layer is held above the profile. `change` stays until the layer next moves, so a `STATE` sent for another reason, such as a Bluetooth slot changing, repeats the last: it says why `layer_id` last moved, not that a key was just pressed. A host reads a value above 3 as 0. A `STATE` of six bytes or fewer says nothing about why the layer changed, which is not the same answer as 0.
+
+### Compatibility
+
+- **A host turns profile layers on from feature 0, and from nothing else.** Firmware without it skips `0x0C` silently, as firmware before 0.9.0 does and a build with `CONFIG_MINIMALPAD_PROFILE_LAYERS=n` does, so a host that sent one and waited would only time out. A build with `CONFIG_MINIMALPAD_PROFILE_LAYER_BEHAVIOR=n` has no `&profile_layer` key, so it leaves the bit clear too.
+- **Studio 0.5.0 and older on this firmware** are unaffected. `HELLO_ACK` is still 7 bytes, with `proto` 7 and the same capability bits. They read the bytes of `STATE` they know and ignore the seventh. Studio 0.5.0, the first to ask `GET_FEATURES`, uses features 1 and 2 and does nothing with bit 0. They switch with `SET_PROFILE` as they always did, which clears the group, so a `&profile_layer` key set by a newer Studio does nothing under them.
+- **Studio 0.6.0 on firmware 0.8.0.** `FEATURES` is `0x06`, so feature 0 is clear. Studio sends no `SWITCH_PROFILE`, offers no `&profile_layer` key and switches with `SET_PROFILE`, to the profile's last layer, as before. A profile that already has several layers shows the others need firmware 0.9.0 to switch on the pad, and adding a layer offers the update.
+- **`STATE` grows by a trailing field.** A host reads the bytes it knows and ignores the rest, from its first version: a decoder that refused a longer `STATE` would fix it at its size for good.
+- **USB and Bluetooth behave the same**: both transports share the frame reader and the handlers.
+
+### How Studio uses it
+
+These are Studio's rules. They sit here too, so both ends implement the same thing.
+
+- Turn profile layers on from feature 0, and from nothing else. On a pad without it Studio switches with `SET_PROFILE` as before, to the last layer chosen.
+- Send `SWITCH_PROFILE` with each app switch: the profile's last layer, or its first (Home) when none is remembered, and the profile's healthy layers in order as the group.
+- Count the switch once a `STATE` names its layer (ADR 0016 in the MinimalPad Studio for Mac repo). `REJECTED` for `0x0C` fails the switch, as it does for `0x02`.
+- A `STATE` read after the newest confirmation that names a layer in the held group means the pad changed layer by itself. With `change` 1 the layer is confirmed and wanted, and the profile remembers it as its last layer. No new switch is sent. With `change` 2 the held layer is confirmed for display only: what Studio wants, and the last layer, stay. With `change` 3 the confirmed layer goes back.
+- A `STATE` numbered before the newest confirmation never confirms anything. With `change` 1 it still updates the last layer of the profile that owns its layer.
+- After a fallback caused by a lost heartbeat, apply the wanted layer again, which is the last one chosen.
+- When the held profile's layers change, a layer added, deleted, moved, or healthy again, send `SWITCH_PROFILE` again with the new group, so the pad never cycles through a stale list. It stays on the layer the pad is on, or goes Home if that layer was deleted.
+
 ## Settings
 
 Add any of these to `boards/shields/minimalpad/minimalpad.conf`:
@@ -485,10 +621,12 @@ Add any of these to `boards/shields/minimalpad/minimalpad.conf`:
 | `CONFIG_MINIMALPAD_HOST_USB_TX_BUFFER_SIZE` | `512` | Bytes reserved while Studio and host replies share USB |
 | `CONFIG_MINIMALPAD_HOST_HEARTBEAT_DEFAULT_TIMEOUT` | `6` | Seconds before falling back, until Studio's first heartbeat sets its own |
 | `CONFIG_MINIMALPAD_MAC_ACTION` | `y` | The `&mac_action` key. Set `n` to build without it; the pad then no longer claims Mac actions in `HELLO_ACK` |
-| `CONFIG_MINIMALPAD_HOST_DIAL` | `y` | `&host_dial` and each layer's dial. Set `n` to build without it; the pad then no longer claims layer dials in `HELLO_ACK` |
+| `CONFIG_MINIMALPAD_HOST_DIAL` | `y` | `&host_dial` and each layer's dial, saved 2 seconds after the last change. Set `n` to build without it; the pad then no longer claims layer dials in `HELLO_ACK` |
 | `CONFIG_MINIMALPAD_HOST_DIAL_SCROLL_STEP` | `1` | Wheel steps per step of the dial when a profile's dial scrolls |
 | `CONFIG_MINIMALPAD_HOST_LIGHTING` | `y` | Studio reads and sets the pad's own lighting. Needs `CONFIG_ZMK_RGB_UNDERGLOW`. Set `n` to build without it; the pad then no longer claims lighting in `HELLO_ACK`, and colours changed with keys go back to waiting for ZMK's next save |
-| `CONFIG_MINIMALPAD_HOST_LIGHTS` | `y` | Layer and key lights, kept on the pad and set from Studio. Needs `CONFIG_ZMK_RGB_UNDERGLOW`. Set `n` to build without it; the pad then no longer claims features in `HELLO_ACK`, and every key shows the underglow |
+| `CONFIG_MINIMALPAD_HOST_LIGHTS` | `y` | Layer and key lights, kept on the pad and set from Studio. Needs `CONFIG_ZMK_RGB_UNDERGLOW`. Set `n` to build without it; `FEATURES` then lacks bits 1 and 2, and every key shows the underglow. `GET_FEATURES` stays, because the host core answers it |
+| `CONFIG_MINIMALPAD_PROFILE_LAYERS` | `y` | Several layers for one profile: `SWITCH_PROFILE`, the group the pad keeps while Studio holds it, and `STATE`'s `change` byte. Set `n` to build without it; `FEATURES` then lacks bit 0 and the pad skips `SWITCH_PROFILE` as an unknown command. The bit also needs `CONFIG_MINIMALPAD_PROFILE_LAYER_BEHAVIOR` |
+| `CONFIG_MINIMALPAD_PROFILE_LAYER_BEHAVIOR` | `y` | The `&profile_layer` key. Needs `CONFIG_MINIMALPAD_PROFILE_LAYERS`. Set `n` to build without it; `FEATURES` then lacks bit 0, because the bit promises this key |
 | `CONFIG_MINIMALPAD_LIGHT_LAYERS` | `y` | The LED strip that draws those lights over the underglow. Built with or without the host module, because the shield's devicetree makes it the underglow's. Set `n` only after pointing the overlay's `zmk,underglow` back at the chain |
 | `CONFIG_MINIMALPAD_HOST_LEDS_FORCE_SOLID` | `y` | Show Profile HSB exactly: Breathe generates brightness, while Spectrum and Swirl generate hue |
 | `CONFIG_MINIMALPAD_HOST_LOG_LEVEL_DBG` | off | Log what the module decides, with the `zmk-usb-logging` snippet |
@@ -510,11 +648,15 @@ Firmware 0.7.0's lighting, measured on 29 Sep 2026 at the ZMK revision `config/w
 
 Firmware 0.8.0's layer and key lights, measured on 11 Oct 2026 the same way, take `minimalpad_with_studio` to 255,008 B flash and 82,054 B RAM, against 252,220 B and about 79.7 KB for 0.7.1: about 2.8 KB more flash and 2.3 KB more RAM. 1,176 B of that RAM is `CONFIG_BT_ATT_TX_COUNT=10`.
 
+Firmware 0.9.0's profile layers and the dial's save, measured on 12 Oct 2026 the same way (the Docker build of `minimalpad_with_studio`, with ZMK at the revision `config/west.yml` pins), take `minimalpad_with_studio` to 257,096 B flash and 82,214 B RAM. The v0.8.0 tag built the same way gives 255,056 B and 82,054 B, 48 B more flash than the figure above, which was taken before the last pairing fix. So 0.9.0 is 2,040 B more flash and 160 B more RAM. A build with `CONFIG_MINIMALPAD_HOST_LIGHTS=n` also links: 254,500 B flash and 81,062 B RAM. So does one with `CONFIG_MINIMALPAD_PROFILE_LAYER_BEHAVIOR=n`: 256,012 B flash and 82,134 B RAM.
+
 ## Testing
 
 Flash a spare pad first, since the Studio build changes the layer count. The checklist is in the MinimalPad Studio for Mac repo, `.scratch/host-module/issues/01-test-on-a-pad.md`. Bluetooth Profile switching has passed. USB switching, USB fallback and the lighting cases remain to be run on hardware.
 
 The 0.8.0 checks for layer and key lights passed over USB on 11 Oct 2026, on the CI build of `54d402a`: the handshake (revision 6, layer and key lights), setting and reading back a key light and a layer light, each lighting the right LEDs, a key light on Default lasting through a restart, brightness, the idle fade, lights off, a host's `SHOW_PAD_LIGHTING` and the 3-second show after a Colour key. Two Bluetooth checks are still to run: that a whole-layer `SET_KEY_LIGHT` brings all six `KEY_LIGHTS_STATE` pages, and switching apps quickly while a colour is dragged. Their results go in the 0.8.0 pull request.
+
+The 0.9.0 checks passed on 12 Oct 2026. Over USB, on the CI build of `c074022`, with `minimalpadctl host`: the handshake (revision 7, profile layers, layer and key lights); `&profile_layer` bindings accepted and a bad Next refused; `SWITCH_PROFILE` confirmed with `change` host; Next and Go to swapping with `change` key; Hold for Default beginning and ending a hold; a toggled pad layer surviving Next and Go to; a hold released after another switch doing nothing; refusals with reason 1 (Default in a group) and 2 (no such layer); and coloured layers swapping with no flash of the pad's own lighting. Over Bluetooth, on the CI build of `868a936` (the code this release is built from), with MinimalPad Studio for Mac 0.6.0: Next layer on the dial press stepping through an app's layers, each in its own colour; the pad coming back to the layer used last, also after Studio restarts; adding, renaming and deleting layers with long names, which froze the pad before `aa2036b`; and Hold for Default. Still to run: a dial set right after a restart, and a hold interrupted by an app switch.
 
 ## Building locally
 
